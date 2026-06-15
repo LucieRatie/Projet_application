@@ -235,15 +235,26 @@ function StudentChatContent({
     [user, session],
   );
 
-  const handleMessagesChange = useCallback(
-    (msgs: any[]) => {
-      setLiveMessages(msgs);
-      if (msgs.length > lastSyncedLen.current) {
-        setTimeout(() => syncWithDB(msgs), 1200);
-      }
-    },
-    [syncWithDB],
-  );
+  const handleMessagesChange = useCallback((msgs: any[]) => {
+    setLiveMessages(msgs);
+  }, []);
+
+  // Debounced database synchronization
+  useEffect(() => {
+    if (liveMessages.length === 0) return;
+
+    if (
+      liveMessages.length > initialMessages.length ||
+      liveMessages.length > lastSyncedLen.current
+    ) {
+      const timer = setTimeout(() => {
+        syncWithDB(liveMessages);
+        lastSyncedLen.current = liveMessages.length;
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [liveMessages, initialMessages.length, syncWithDB]);
 
   const handlePrint = () => {
     printPDF(liveMessages, {

@@ -246,7 +246,7 @@ export default function TeacherDashboard() {
               <main className="relative flex-1">
                 {selectedThread ? (
                   <ThreadViewer
-                    key={selectedThread._id}
+                    key={`${selectedThread._id}-${selectedThread.messages?.length ?? 0}-${selectedThread.updatedAt || ""}`}
                     thread={selectedThread}
                   />
                 ) : (
