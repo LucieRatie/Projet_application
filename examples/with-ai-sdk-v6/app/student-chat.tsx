@@ -4,7 +4,7 @@ import { Thread } from "@/components/assistant-ui/thread";
 import { AssistantRuntimeProvider, useThread } from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { useAuth } from "@/lib/auth-context";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 // ─── helper: extraire le texte brut d'un message (ThreadMessage ou MongoDB brut) ────
 function extractText(msg: any): string {
@@ -186,7 +186,10 @@ function StudentChatContent({
   const session = user.studentData?.currentSessionId;
 
   // Map MongoDB → AI SDK v6 UIMessage
-  const sdkInitialMessages = mongoToUIMessages(initialMessages);
+  const sdkInitialMessages = useMemo(
+    () => mongoToUIMessages(initialMessages),
+    [initialMessages],
+  );
 
   const runtime = useChatRuntime({
     messages: sdkInitialMessages,
