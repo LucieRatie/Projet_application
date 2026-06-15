@@ -1,0 +1,134 @@
+---
+title: ChatGPT Clone Example
+description: Open-source ChatGPT clone built in React with assistant-ui — centered welcome composer, Tools dropdown, four-state primary action, and full assistant action bar.
+---
+
+import { ChatGPT } from "@/components/examples/chatgpt";
+
+<div className="not-prose h-[600px]">
+  <ChatGPT />
+</div>
+
+## Overview
+
+The ChatGPT Clone demonstrates how to customize assistant-ui to match OpenAI's ChatGPT interface. This version mirrors the current chatgpt.com layout: a centered welcome composer in the empty state, a Tools dropdown, and an always-visible assistant action bar with thumbs, share, speak, reload, and more.
+
+## Features
+
+- **Theme-Aware**: White light mode (`#ffffff`) and dark mode (`#212121`) with no forced theme
+- **Centered Empty State**: "Where should we begin?" heading + composer rendered together in the middle of the viewport
+- **Functional Tools Dropdown**: `Search the web` / `Create an image` / `Run deep research` / `Think longer` / `Study and learn`
+- **Four-State Primary Action**: Cancel (running), Send (typing), Dictate mic + orange Voice circle (idle), StopDictation (recording)
+- **Assistant Action Bar**: Always visible — Copy, FeedbackPositive, FeedbackNegative, Speak, Share, Reload, More
+- **User Bubble**: Right-aligned `bg-secondary` pill with hover-only Edit action
+- **Sticky Footer**: Composer + "ChatGPT can make mistakes" disclaimer at the bottom of the chat
+
+## Quick Start
+
+```bash
+npx assistant-ui add thread
+```
+
+## Code
+
+The ChatGPT clone splits into an `EmptyState` and a sticky chat layout. The composer is shared by both:
+
+```tsx
+import {
+  AuiIf,
+  ThreadPrimitive,
+  ComposerPrimitive,
+  ActionBarPrimitive,
+} from "@assistant-ui/react";
+
+export const ChatGPT = () => (
+  <ThreadPrimitive.Root className="bg-white dark:bg-[#212121]">
+    <AuiIf condition={(s) => s.thread.isEmpty}>
+      <EmptyState />
+    </AuiIf>
+    <AuiIf condition={(s) => !s.thread.isEmpty}>
+      <ThreadPrimitive.Viewport>
+        <ThreadPrimitive.Messages />
+        <ThreadPrimitive.ViewportFooter className="sticky bottom-0">
+          <Composer />
+          <p>ChatGPT can make mistakes. Check important info.</p>
+        </ThreadPrimitive.ViewportFooter>
+      </ThreadPrimitive.Viewport>
+    </AuiIf>
+  </ThreadPrimitive.Root>
+);
+
+const Composer = () => (
+  <ComposerPrimitive.Root className="rounded-[28px] border bg-white dark:bg-[#303030]">
+    <ComposerPrimitive.Input rows={1} placeholder="Ask anything" />
+    <div className="flex items-center justify-between">
+      <ComposerPrimitive.AddAttachment />
+      <div className="flex items-center gap-1">
+        <ToolsMenu />
+        <PrimaryAction />
+      </div>
+    </div>
+  </ComposerPrimitive.Root>
+);
+```
+
+### Four-State Primary Action
+
+```tsx
+<AuiIf condition={(s) => s.thread.isRunning}>
+  <ComposerPrimitive.Cancel />
+</AuiIf>
+<AuiIf condition={(s) => s.composer.dictation != null}>
+  <ComposerPrimitive.StopDictation />
+</AuiIf>
+<AuiIf condition={(s) => s.composer.dictation == null && !s.composer.isEmpty}>
+  <ComposerPrimitive.Send />
+</AuiIf>
+<AuiIf condition={(s) => s.composer.dictation == null && s.composer.isEmpty}>
+  <ComposerPrimitive.Dictate />
+  <button aria-hidden="true" className="bg-[#ff5d1f]"> {/* Voice */}</button>
+</AuiIf>
+```
+
+The conditions are mutually exclusive in priority order (`Cancel > StopDictation > Send > Dictate`) so dictation can be paused even when transcribed text is in the composer.
+
+### Tools Dropdown
+
+```tsx
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/shared/dropdown-menu";
+
+<DropdownMenu>
+  <DropdownMenuTrigger>Tools <ChevronDown /></DropdownMenuTrigger>
+  <DropdownMenuContent>
+    <DropdownMenuItem icon={<Globe />}>Search the web</DropdownMenuItem>
+    <DropdownMenuItem icon={<ImageIcon />}>Create an image</DropdownMenuItem>
+    <DropdownMenuItem icon={<Telescope />}>Run deep research</DropdownMenuItem>
+    <DropdownMenuItem icon={<Lightbulb />}>Think longer</DropdownMenuItem>
+    <DropdownMenuItem icon={<Sparkles />}>Study and learn</DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+### Color Palette
+
+| Element | Light | Dark |
+|---------|-------|------|
+| Background | `#ffffff` | `#212121` |
+| Composer surface | `#ffffff` | `#303030` |
+| Composer border | `#e5e5e5` | `transparent` |
+| Primary text | `#0d0d0d` | `#ececec` |
+| Muted text | `#5d5d5d` | `#a8a8a8` |
+| Send button | `#0d0d0d` (white icon) | `#ffffff` (black icon) |
+| Voice button | `#ff5d1f` (orange) | `#ff5d1f` |
+
+### Styling Details
+
+- **Composer**: `rounded-[28px]` with thin border in light mode, no border in dark mode
+- **Empty Layout**: heading + composer centered together; no avatar
+- **Tools Pill**: `hidden sm:flex` so it collapses on narrow screens; mobile only shows + and primary action
+- **Assistant Action Bar**: always visible, no hover-only behavior
+- **User Bubble**: `rounded-3xl bg-secondary` with hover-only Edit primitive
+
+## Source
+
+<SourceLink href="https://github.com/assistant-ui/assistant-ui/blob/main/apps/docs/components/examples/chatgpt.tsx" />

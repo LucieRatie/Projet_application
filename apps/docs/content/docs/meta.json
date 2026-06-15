@@ -1,0 +1,18 @@
+{
+  "pages": [
+    "(docs)",
+    "guides",
+    "tools",
+    "primitives",
+    "ui",
+    "runtimes",
+    "integrations",
+    "react-native",
+    "ink",
+    "cloud",
+    "utilities",
+    "migrations",
+    "copilots",
+    "(reference)"
+  ]
+}

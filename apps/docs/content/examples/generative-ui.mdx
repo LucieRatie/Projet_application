@@ -1,0 +1,80 @@
+---
+title: Generative UI Example (Tool UI)
+description: Live demo of toolkit Tool UI patterns — charts, date pickers, contact forms, and maps. For the GenerativeUI JSON-spec primitive, see /gui-chat and /primitive in the same example app.
+---
+
+## Overview
+
+The main route (`examples/with-generative-ui`) demonstrates **Tool UI**
+patterns using toolkit `render` entries — not the
+`MessagePrimitive.GenerativeUI` JSON-spec primitive.
+
+- **Chart Generation** — AI returns structured data, rendered as bar/line/pie charts via Recharts
+- **Date Picker** — AI requests a date selection, user picks via native input, result sent back with `addResult`
+- **Contact Form** — AI collects name, email, and phone through an interactive form tool
+- **Location Map** — AI shows a place on an embedded OpenStreetMap
+
+### Related routes in the same example app
+
+| Route | What it demonstrates |
+|-------|---------------------|
+| `/` | Tool UI (`Tools({ toolkit })`) — interactive widgets |
+| `/primitive` | Static `GenerativeUIRender` with a hand-written spec |
+| `/gui-chat` | End-to-end chat with `render_gui` tool → `MessagePrimitive.GenerativeUI` bridge |
+
+See the [Generative UI primitive guide](/docs/guides/generative-ui) for opt-in wiring and pattern comparison.
+
+## Patterns Demonstrated
+
+### Backend-Rendered Tools (Chart, Location)
+
+These tools have backend `execute` functions and frontend toolkit renderers. The AI generates the data, the backend confirms, and the frontend renders rich UI from `args`:
+
+```tsx
+const toolkit = defineToolkit({
+  generate_chart: {
+    type: "backend",
+    render: ({ args, status }) => {
+    const { title, type, data, xKey, dataKeys } = args;
+    // Render a Recharts BarChart/LineChart/PieChart based on args
+    return <ChartContainer config={buildChartConfig(dataKeys)}>...</ChartContainer>;
+  },
+  },
+});
+```
+
+### Frontend-Only Tools (Date Picker, Contact Form)
+
+These tools have no backend `execute` — the AI triggers the tool call, and the user completes it through interactive UI. The `addResult` callback sends the user's input back to the AI:
+
+```tsx
+const toolkit = defineToolkit({
+  select_date: {
+    type: "human",
+    render: ({ args, result, addResult }) => {
+    if (result) return <div>Selected: {result.date}</div>;
+
+    return (
+      <div>
+        <p>{args.prompt}</p>
+        <input type="date" onChange={(e) => setValue(e.target.value)} />
+        <button onClick={() => addResult({ date: value })}>Confirm</button>
+      </div>
+    );
+  },
+  },
+});
+```
+
+## Key Concepts
+
+| Concept | Used In | Description |
+|---------|---------|-------------|
+| `Tools({ toolkit })` | All 4 tools | Register a React renderer for a specific tool call |
+| `addResult` | Date Picker, Contact Form | Send user input back to the AI as the tool result |
+| `status.type` | Chart, Location | Show loading states while the AI streams tool arguments |
+| `args` streaming | Chart | Render partial UI as tool arguments stream in |
+
+## Source
+
+<SourceLink href="https://github.com/assistant-ui/assistant-ui/tree/main/examples/with-generative-ui" />

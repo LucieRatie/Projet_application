@@ -1,0 +1,318 @@
+# assistant-cloud
+
+## 0.1.33
+
+### Patch Changes
+
+- [#4390](https://github.com/assistant-ui/assistant-ui/pull/4390) [`bb38d08`](https://github.com/assistant-ui/assistant-ui/commit/bb38d085b04b59f68c8cf16b23c2211454384668) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`434bba5`](https://github.com/assistant-ui/assistant-ui/commit/434bba5f7c59ab7cf6f1c78a8898fd4d3addb12d)]:
+  - assistant-stream@0.3.23
+
+## 0.1.32
+
+### Patch Changes
+
+- [#4306](https://github.com/assistant-ui/assistant-ui/pull/4306) [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc)]:
+  - assistant-stream@0.3.21
+
+## 0.1.31
+
+### Patch Changes
+
+- [#4198](https://github.com/assistant-ui/assistant-ui/pull/4198) [`78ff336`](https://github.com/assistant-ui/assistant-ui/commit/78ff336028ce125608a4b716a93a2519ad6d9eab) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`cba2b42`](https://github.com/assistant-ui/assistant-ui/commit/cba2b42c26083e730ae07194186ab4473f9f4cf3), [`58f80e0`](https://github.com/assistant-ui/assistant-ui/commit/58f80e09b51a9d025403f8692c3f41adc6d403e0), [`5fe118d`](https://github.com/assistant-ui/assistant-ui/commit/5fe118d6e61fd661859ee0d6b5ef10a370992a84), [`dcd5897`](https://github.com/assistant-ui/assistant-ui/commit/dcd5897f6dd6ca6bfe6978c3c03371e070965eab), [`ae54c55`](https://github.com/assistant-ui/assistant-ui/commit/ae54c55c8c8b0f9e9ef455ced1498f37d998c6cb)]:
+  - assistant-stream@0.3.20
+
+## 0.1.30
+
+### Patch Changes
+
+- [#4128](https://github.com/assistant-ui/assistant-ui/pull/4128) [`331f2f7`](https://github.com/assistant-ui/assistant-ui/commit/331f2f7f432285fd0cdc14e0862b550e5d15769e) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`1315789`](https://github.com/assistant-ui/assistant-ui/commit/13157895e4d69ad4266d6ab278edfc2e3ea1de92), [`299d448`](https://github.com/assistant-ui/assistant-ui/commit/299d4488c8a5bbec0679680866f5975055fe71b3), [`2dec3ae`](https://github.com/assistant-ui/assistant-ui/commit/2dec3aeba0431178f4ca26e470b304f5a89390ba), [`fcb6baf`](https://github.com/assistant-ui/assistant-ui/commit/fcb6baf161a9ee7dda65191e0b42de12b368724d), [`c4d3eea`](https://github.com/assistant-ui/assistant-ui/commit/c4d3eeac6907a2fc15718f3c710d73d24eaeb652)]:
+  - assistant-stream@0.3.18
+
+## 0.1.29
+
+### Patch Changes
+
+- [#4085](https://github.com/assistant-ui/assistant-ui/pull/4085) [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`13a12c4`](https://github.com/assistant-ui/assistant-ui/commit/13a12c46c94f7e5e62af02692cf3479fff48bd02), [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154)]:
+  - assistant-stream@0.3.16
+
+## 0.1.28
+
+### Patch Changes
+
+- [#4041](https://github.com/assistant-ui/assistant-ui/pull/4041) [`845c7c1`](https://github.com/assistant-ui/assistant-ui/commit/845c7c12fecbb448da7f1135c33163b653a50710) - feat(cloud): allow custom `baseUrl` with API key auth. Previously the apiKey config branch hard-coded `https://backend.assistant-api.com`; you can now pass `baseUrl` to point an apiKey-authenticated `AssistantCloud` at a self-hosted or staging backend. ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`94548fa`](https://github.com/assistant-ui/assistant-ui/commit/94548fa8d587962d8ab0338a9609a9ff21240c33)]:
+  - assistant-stream@0.3.15
+
+## 0.1.27
+
+### Patch Changes
+
+- [#3876](https://github.com/assistant-ui/assistant-ui/pull/3876) [`ce865bc`](https://github.com/assistant-ui/assistant-ui/commit/ce865bc46af996d53f89e18068139d4d38546ca6) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`ce865bc`](https://github.com/assistant-ui/assistant-ui/commit/ce865bc46af996d53f89e18068139d4d38546ca6)]:
+  - assistant-stream@0.3.12
+
+## 0.1.26
+
+### Patch Changes
+
+- c988db8: chore: update dependencies
+- Updated dependencies [c988db8]
+  - assistant-stream@0.3.11
+
+## 0.1.25
+
+### Patch Changes
+
+- 376bb00: chore: update dependencies
+
+## 0.1.24
+
+### Patch Changes
+
+- bdce66f: chore: update dependencies
+- 209ae81: chore: remove aui-source export condition from package.json exports
+- Updated dependencies [dffb6b4]
+- Updated dependencies [9103282]
+- Updated dependencies [bdce66f]
+- Updated dependencies [209ae81]
+  - assistant-stream@0.3.9
+
+## 0.1.23
+
+### Patch Changes
+
+- 52403c3: chore: update dependencies
+- Updated dependencies [3227e71]
+- Updated dependencies [52403c3]
+  - assistant-stream@0.3.8
+
+## 0.1.22
+
+### Patch Changes
+
+- 349f3c7: chore: update deps
+- Updated dependencies [427ffaa]
+- Updated dependencies [349f3c7]
+- Updated dependencies [02614aa]
+  - assistant-stream@0.3.6
+
+## 0.1.21
+
+### Patch Changes
+
+- a845911: chore: update dependencies
+
+## 0.1.20
+
+### Patch Changes
+
+- 17cf9a8: feat(telemetry): add reasoning/cached token usage across cloud reporting paths
+
+## 0.1.19
+
+### Patch Changes
+
+- 36ef3a2: chore: update dependencies
+- Updated dependencies [36ef3a2]
+  - assistant-stream@0.3.4
+
+## 0.1.18
+
+### Patch Changes
+
+- d08a488: Preserve CloudAPIError instances from AssistantCloudAPI error responses.
+- 5e304ea: feat: client-side run telemetry reporting with `beforeReport` hook
+- af5b085: feat(assistant-cloud): support MCP tool observability
+- a247fc9: feat(assistant-cloud): allow save complete multi-step message
+- 93910bd: Rename .tsx files to .ts where no JSX syntax is used
+- 58a8472: feat: Add standalone AI SDK hooks for cloud persistence without assistant-ui
+
+  New `@assistant-ui/cloud-ai-sdk` package with `useCloudChat` and `useThreads` hooks. Wraps AI SDK's `useChat` with automatic message persistence, thread management, and auto-title generation.
+
+- Updated dependencies [61b54e9]
+- Updated dependencies [93910bd]
+  - assistant-stream@0.3.3
+
+## 0.1.17
+
+### Patch Changes
+
+- a088518: chore: update dependencies
+- Updated dependencies [a088518]
+  - assistant-stream@0.3.2
+
+## 0.1.16
+
+### Patch Changes
+
+- d45b893: chore: update dependencies
+- Updated dependencies [d45b893]
+  - assistant-stream@0.3.1
+
+## 0.1.15
+
+### Patch Changes
+
+- Updated dependencies [acbaf07]
+  - assistant-stream@0.3.0
+
+## 0.1.14
+
+### Patch Changes
+
+- 605d825: chore: update dependencies
+- Updated dependencies [605d825]
+  - assistant-stream@0.2.48
+
+## 0.1.13
+
+### Patch Changes
+
+- 3719567: chore: update deps
+- Updated dependencies [3719567]
+  - assistant-stream@0.2.47
+
+## 0.1.12
+
+### Patch Changes
+
+- 57bd207: chore: update dependencies
+- cce009d: chore: use tsc for building packages
+- Updated dependencies [57bd207]
+- Updated dependencies [cce009d]
+  - assistant-stream@0.2.46
+
+## 0.1.11
+
+### Patch Changes
+
+- e8ea57b: chore: update deps
+- Updated dependencies [e8ea57b]
+  - assistant-stream@0.2.45
+
+## 0.1.10
+
+### Patch Changes
+
+- 01c31fe: chore: update dependencies
+- Updated dependencies [01c31fe]
+  - assistant-stream@0.2.43
+
+## 0.1.9
+
+### Patch Changes
+
+- ec662cd: chore: update dependencies
+- Updated dependencies [ec662cd]
+  - assistant-stream@0.2.42
+
+## 0.1.8
+
+### Patch Changes
+
+- 2c33091: chore: update deps
+- Updated dependencies [2c33091]
+  - assistant-stream@0.2.41
+
+## 0.1.7
+
+### Patch Changes
+
+- 4e3877e: feat: Add thread fetching capability to remote thread list adapter
+  - Add `fetch` method to `RemoteThreadListAdapter` interface
+  - Implement `fetch` in cloud adapter to retrieve individual threads
+  - Enhance `switchToThread` to automatically fetch and load threads not present in the current list
+  - Add `get` method to `AssistantCloudThreads` for individual thread retrieval
+
+## 0.1.6
+
+### Patch Changes
+
+- 2fc7e99: chore: update deps
+- Updated dependencies [2fc7e99]
+  - assistant-stream@0.2.39
+
+## 0.1.5
+
+### Patch Changes
+
+- 953db24: chore: update deps
+- Updated dependencies [953db24]
+  - assistant-stream@0.2.37
+
+## 0.1.4
+
+### Patch Changes
+
+- chore: update deps
+- Updated dependencies
+  - assistant-stream@0.2.36
+
+## 0.1.3
+
+### Patch Changes
+
+- e6a46e4: chore: update deps
+- Updated dependencies [e6a46e4]
+  - assistant-stream@0.2.34
+
+## 0.1.2
+
+### Patch Changes
+
+- 8812f86: chore: update deps
+- Updated dependencies [8812f86]
+  - assistant-stream@0.2.30
+
+## 0.1.1
+
+### Patch Changes
+
+- 12e0a77: chore: update deps
+- Updated dependencies [12e0a77]
+  - assistant-stream@0.2.23
+
+## 0.1.0
+
+### Minor Changes
+
+- 179f8b7: Add format parameter support to assistant-cloud client library
+  - Add optional `format` query parameter to `AssistantCloudThreadMessages.list()` method
+  - Update cloud history adapter to pass format parameter when loading messages
+  - Enables backend-level message format conversion when supported by the cloud backend
+
+## 0.0.4
+
+### Patch Changes
+
+- 0f063e0: chore: update dependencies
+- Updated dependencies [0f063e0]
+  - assistant-stream@0.2.22
+
+## 0.0.3
+
+### Patch Changes
+
+- 65b3ff1: chore: update deps
+- Updated dependencies [65b3ff1]
+  - assistant-stream@0.2.18
+
+## 0.0.2
+
+### Patch Changes
+
+- 644abb8: chore: update deps
+- Updated dependencies [644abb8]
+  - assistant-stream@0.2.17

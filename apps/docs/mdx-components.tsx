@@ -1,0 +1,68 @@
+import type { MDXComponents } from "mdx/types";
+import type { ComponentProps } from "react";
+import { Accordion, Accordions } from "fumadocs-ui/components/accordion";
+import { Callout } from "@/components/docs/fumadocs/callout";
+import { Card, Cards } from "@/components/docs/fumadocs/card";
+import { Step, Steps } from "@/components/docs/fumadocs/steps";
+import { Tab, Tabs } from "@/components/docs/fumadocs/tabs";
+import defaultComponents from "fumadocs-ui/mdx";
+import {
+  CodeBlock,
+  type CodeBlockProps,
+  Pre,
+} from "fumadocs-ui/components/codeblock";
+import { InstallCommand } from "@/components/docs/fumadocs/install/install-command";
+import { ParametersTable } from "@/components/docs/parameters-table";
+import {
+  PlatformAwareCode,
+  PlatformOnly,
+  PlatformTabs,
+} from "@/components/docs/platform/mdx";
+import { PrimitivesTypeTable } from "@/components/docs/primitives-type-table";
+import { SourceLink } from "@/components/docs/source-link";
+import { Flow } from "@/components/assistant-ui/flow";
+import { Code } from "@radix-ui/themes";
+
+function Kbd({ children, ...props }: ComponentProps<"kbd">) {
+  return (
+    <kbd
+      className="bg-muted text-muted-foreground inline-flex h-5 min-w-5 items-center justify-center rounded-sm px-1.5 font-mono text-xs"
+      {...props}
+    >
+      {children}
+    </kbd>
+  );
+}
+
+export function getMDXComponents(components: MDXComponents): MDXComponents {
+  return {
+    ...(defaultComponents as MDXComponents),
+    pre: (props: CodeBlockProps) => (
+      <CodeBlock {...props}>
+        <Pre className="max-h-87.5">
+          <PlatformAwareCode>{props.children}</PlatformAwareCode>
+        </Pre>
+      </CodeBlock>
+    ),
+    Tabs,
+    Tab,
+    PlatformTabs,
+    Callout,
+    Card,
+    Cards,
+    Step,
+    Steps,
+    Accordion,
+    Accordions,
+    Kbd,
+    PlatformOnly,
+    InstallCommand,
+    ParametersTable,
+    PrimitivesTypeTable,
+    SourceLink,
+    Flow,
+    Code,
+    blockquote: (props) => <Callout>{props.children}</Callout>,
+    ...components,
+  };
+}
