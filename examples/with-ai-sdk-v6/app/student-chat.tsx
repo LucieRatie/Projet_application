@@ -199,7 +199,8 @@ function StudentChatContent({
     "idle" | "syncing" | "success" | "error"
   >("idle");
   const lastSyncedLen = useRef(initialMessages.length);
-  const [liveMessages, setLiveMessages] = useState<any[]>([]);
+  const latestMessages = useRef<any[]>(initialMessages);
+  const syncTimer = useRef<NodeJS.Timeout | null>(null);
 
   const syncWithDB = useCallback(
     async (msgs: any[]) => {
@@ -235,29 +236,32 @@ function StudentChatContent({
     [user, session],
   );
 
-  const handleMessagesChange = useCallback((msgs: any[]) => {
-    setLiveMessages(msgs);
+  const handleMessagesChange = useCallback(
+    (msgs: any[]) => {
+      latestMessages.current = msgs;
+
+      if (
+        msgs.length > initialMessages.length ||
+        msgs.length > lastSyncedLen.current
+      ) {
+        if (syncTimer.current) clearTimeout(syncTimer.current);
+        syncTimer.current = setTimeout(() => {
+          syncWithDB(msgs);
+        }, 1500);
+      }
+    },
+    [initialMessages.length, syncWithDB],
+  );
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (syncTimer.current) clearTimeout(syncTimer.current);
+    };
   }, []);
 
-  // Debounced database synchronization
-  useEffect(() => {
-    if (liveMessages.length === 0) return;
-
-    if (
-      liveMessages.length > initialMessages.length ||
-      liveMessages.length > lastSyncedLen.current
-    ) {
-      const timer = setTimeout(() => {
-        syncWithDB(liveMessages);
-        lastSyncedLen.current = liveMessages.length;
-      }, 1500);
-
-      return () => clearTimeout(timer);
-    }
-  }, [liveMessages, initialMessages.length, syncWithDB]);
-
   const handlePrint = () => {
-    printPDF(liveMessages, {
+    printPDF(latestMessages.current, {
       title: `Rapport - ${user.studentData?.firstName ?? ""} ${user.studentData?.lastName ?? ""}`,
       sessionTitle: session?.title,
       level: `FR ${user.studentData?.frenchLevel ?? "A1"} / Math ${user.studentData?.mathLevel ?? "6ème"}`,

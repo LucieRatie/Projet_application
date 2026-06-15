@@ -16,6 +16,11 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log(
+      `Sync request for student ${studentId}:`,
+      JSON.stringify(messages),
+    );
+
     // Find or create a thread for this student ID
     const thread = await Thread.findOneAndUpdate(
       { studentId },
