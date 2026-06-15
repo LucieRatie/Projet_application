@@ -1,10 +1,10 @@
 import { streamText, convertToModelMessages } from "ai";
-import { createOllama } from "ollama-ai-provider";
+import { createOllama } from "ai-sdk-ollama";
 
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434/api";
+const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
 const OLLAMA_MODEL =
   process.env.OLLAMA_MODEL ||
   "fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:4b";
