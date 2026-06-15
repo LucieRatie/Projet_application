@@ -204,13 +204,41 @@ export default function TeacherDashboard() {
                   <div
                     key={t._id}
                     onClick={() => setSelectedThread(t)}
-                    className={`cursor-pointer rounded-xl border p-4 transition-all ${selectedThread?._id === t._id ? "border-blue-400 bg-blue-600" : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800"}`}
+                    className={`group/card relative cursor-pointer rounded-xl border p-4 transition-all ${selectedThread?._id === t._id ? "border-blue-400 bg-blue-600" : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800"}`}
                   >
-                    <div className="font-bold tracking-tight uppercase">
-                      {t.studentName}
-                    </div>
-                    <div className="mt-1 text-[10px] font-bold text-zinc-400">
-                      {t.topic || "Discussion"}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-bold tracking-tight uppercase">
+                          {t.studentName}
+                        </div>
+                        <div className="mt-1 text-[10px] font-bold text-zinc-400">
+                          {t.topic || "Discussion"}
+                        </div>
+                      </div>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (
+                            confirm(
+                              `Supprimer l'historique de ${t.studentName} ?`,
+                            )
+                          ) {
+                            const res = await fetch(`/api/threads/${t._id}`, {
+                              method: "DELETE",
+                            });
+                            if (res.ok) {
+                              if (selectedThread?._id === t._id) {
+                                setSelectedThread(null);
+                              }
+                              fetchData(true);
+                            }
+                          }
+                        }}
+                        className="ml-2 text-zinc-500 opacity-0 transition group-hover/card:opacity-100 hover:text-red-500"
+                        title="Supprimer la discussion"
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </div>
                 ))}
