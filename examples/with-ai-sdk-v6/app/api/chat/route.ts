@@ -4,7 +4,7 @@ import { createOllama } from "ollama-ai-provider";
 export const maxDuration = 30;
 export const dynamic = "force-dynamic";
 
-const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434/api";
+const OLLAMA_URL = process.env.OLLAMA_URL || "http://127.0.0.1:11434/api";
 const OLLAMA_MODEL =
   process.env.OLLAMA_MODEL ||
   "fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:4b";
@@ -63,10 +63,17 @@ export async function POST(req: Request) {
     });
 
     return result.toUIMessageStreamResponse();
-  } catch (error) {
+  } catch (error: any) {
     console.error("Chat Error:", error);
-    return new Response(JSON.stringify({ error: "Internal Error" }), {
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Internal Error",
+        details: error?.message || String(error),
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 }
