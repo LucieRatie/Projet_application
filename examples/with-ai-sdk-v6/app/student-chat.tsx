@@ -46,7 +46,12 @@ function mongoToUIMessages(raw: any[]): any[] {
 // ─── PDF Printer ─────────────────────────────────────────────────────────────
 function printPDF(
   messages: any[],
-  meta: { title: string; sessionTitle?: string; level?: string },
+  meta: {
+    title: string;
+    sessionTitle?: string;
+    level?: string;
+    mathLevel?: string;
+  },
 ) {
   const filtered = messages.filter(
     (m: any) => m.role === "user" || m.role === "assistant",
@@ -93,7 +98,7 @@ function printPDF(
   <div class="info">
     Date : ${dateStr}<br/>
     Session : ${meta.sessionTitle ?? "Discussion libre"}<br/>
-    Niveau : ${meta.level ?? "—"}
+    Niveau : ${meta.level ?? "—"} ${meta.mathLevel ? `| MATH : ${meta.mathLevel}` : ""}
   </div>
   ${html}
   <div class="no-print">
@@ -112,10 +117,12 @@ function printPDF(
 function StudentChatInner({
   user,
   session,
+  visibleDocuments,
   onMessagesChange,
 }: {
   user: any;
   session: any;
+  visibleDocuments: any[];
   onMessagesChange: (msgs: any[]) => void;
 }) {
   const [activeTab, setActiveTab] = useState<"chat" | "docs" | "profil">(
@@ -164,11 +171,11 @@ function StudentChatInner({
         {activeTab === "docs" && (
           <div className="h-full overflow-y-auto p-8">
             <h2 className="mb-6 text-3xl font-black tracking-tighter uppercase">
-              📚 Documents de cours
+              📚 Documents de cours ({user.studentData?.cycle})
             </h2>
-            {session?.documents && session.documents.length > 0 ? (
+            {visibleDocuments.length > 0 ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {session.documents.map((doc: any, idx: number) => (
+                {visibleDocuments.map((doc: any, idx: number) => (
                   <a
                     key={idx}
                     href={doc.url}
@@ -190,7 +197,7 @@ function StudentChatInner({
               <div className="flex h-64 flex-col items-center justify-center rounded-3xl border-4 border-dashed border-zinc-300 bg-zinc-50 text-zinc-400">
                 <div className="text-5xl opacity-30 grayscale">📂</div>
                 <p className="mt-4 font-bold tracking-widest uppercase">
-                  Aucun document pour cette session
+                  Aucun document disponible pour votre cycle
                 </p>
               </div>
             )}
@@ -257,8 +264,8 @@ function StudentChatInner({
                       <div className="text-[10px] font-black uppercase">
                         MATH
                       </div>
-                      <div className="text-lg font-black text-emerald-600">
-                        {user.studentData?.mathLevel}
+                      <div className="text-lg font-black text-amber-600">
+                        {user.studentData?.mathLevel || "CP"}
                       </div>
                     </div>
                   </div>
@@ -333,6 +340,11 @@ function StudentChatContent({
 }) {
   const session = user.studentData?.currentSessionId;
 
+  // Student sees all documents from their assigned session
+  const visibleDocuments = useMemo(() => {
+    return session?.documents || [];
+  }, [session]);
+
   const sdkInitialMessages = useMemo(
     () => mongoToUIMessages(initialMessages),
     [initialMessages],
@@ -365,6 +377,7 @@ function StudentChatContent({
               content: [{ type: "text", text: extractText(m) }],
             })),
             languageLevel: user.studentData?.frenchLevel ?? "A1",
+            mathLevel: user.studentData?.mathLevel ?? "CP",
             subject: session?.subject ?? "Général",
             topic: session?.title ?? "Discussion libre",
           }),
@@ -394,11 +407,19 @@ function StudentChatContent({
         if (syncTimer.current) clearTimeout(syncTimer.current);
         syncTimer.current = setTimeout(() => {
           syncWithDB(msgs);
-        }, 1500);
+        }, 30000);
       }
     },
     [initialMessages.length, syncWithDB],
   );
+
+  // Heartbeat to update lastActive even if no messages are sent
+  useEffect(() => {
+    const heartbeat = setInterval(() => {
+      syncWithDB(latestMessages.current);
+    }, 60000); // Heartbeat every 1 minute
+    return () => clearInterval(heartbeat);
+  }, [syncWithDB]);
 
   useEffect(() => {
     return () => {
@@ -410,7 +431,8 @@ function StudentChatContent({
     printPDF(latestMessages.current, {
       title: `Rapport - ${user.studentData?.firstName ?? ""} ${user.studentData?.lastName ?? ""}`,
       sessionTitle: session?.title,
-      level: `FR ${user.studentData?.frenchLevel ?? "A1"} / Math ${user.studentData?.mathLevel ?? "6ème"}`,
+      level: `FR ${user.studentData?.frenchLevel ?? "A1"}`,
+      mathLevel: user.studentData?.mathLevel,
     });
   };
 
@@ -463,6 +485,7 @@ function StudentChatContent({
         <StudentChatInner
           user={user}
           session={session}
+          visibleDocuments={visibleDocuments}
           onMessagesChange={handleMessagesChange}
         />
       </div>

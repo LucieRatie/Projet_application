@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import { Thread } from "@/models/Thread";
+import { Student } from "@/models/Student";
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
     const body = await req.json();
-    const { studentId, studentName, messages, languageLevel, subject, topic } =
-      body;
+    const {
+      studentId,
+      studentName,
+      messages,
+      languageLevel,
+      mathLevel,
+      subject,
+      topic,
+    } = body;
 
     if (!studentId) {
       return NextResponse.json(
@@ -21,6 +29,9 @@ export async function POST(req: Request) {
       JSON.stringify(messages),
     );
 
+    // Update student's lastActive timestamp
+    await Student.findOneAndUpdate({ studentId }, { lastActive: new Date() });
+
     // Find or create a thread for this student ID
     const thread = await Thread.findOneAndUpdate(
       { studentId },
@@ -29,6 +40,7 @@ export async function POST(req: Request) {
         messages,
         updatedAt: new Date(),
         languageLevel: languageLevel || "A1",
+        mathLevel: mathLevel || "CP",
         subject: subject || "Mathématiques",
         topic: topic || "Discussion en cours",
       },

@@ -15,6 +15,7 @@ const ThreadSchema = new mongoose.Schema({
     default: "A1",
   },
   subject: { type: String, default: "Mathématiques" },
+  mathLevel: String,
   topic: String,
   messages: [MessageSchema],
   updatedAt: { type: Date, default: Date.now },

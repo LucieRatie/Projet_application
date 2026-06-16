@@ -32,6 +32,18 @@ const createMessageQueue: (driver: MessageQueueDriver) => MessageQueueController
 
 <ParametersTable {...DevToolsHooks} />
 
+### fromThreadMessageLike
+
+```ts
+const fromThreadMessageLike: (like: ThreadMessageLike, fallbackId: string, fallbackStatus: MessageStatus) => ThreadMessage;
+```
+
+### generateId
+
+```ts
+const generateId: (size?: number) => string;
+```
+
 ### InMemoryThreadList
 
 <ParametersTable {...InMemoryThreadList} />
