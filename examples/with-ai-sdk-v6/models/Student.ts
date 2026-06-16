@@ -29,7 +29,7 @@ const StudentSchema = new mongoose.Schema(
       ],
       default: "CP",
     },
-    currentSessionId: { type: mongoose.Schema.Types.ObjectId, ref: "Session" },
+    sessionIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Session" }],
     lastActive: { type: Date, default: Date.now },
     skillsSummary: {
       vocabulary: { type: Number, default: 0 },

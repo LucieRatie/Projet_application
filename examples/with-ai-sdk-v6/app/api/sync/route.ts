@@ -30,11 +30,15 @@ export async function POST(req: Request) {
     );
 
     // Update student's lastActive timestamp
-    await Student.findOneAndUpdate({ studentId }, { lastActive: new Date() });
-
-    // Find or create a thread for this student ID
-    const thread = await Thread.findOneAndUpdate(
+    await (Student as any).findOneAndUpdate(
       { studentId },
+      { lastActive: new Date() },
+      {},
+    );
+
+    // Find or create a thread for this student ID and topic (to keep history separate)
+    const thread = await (Thread as any).findOneAndUpdate(
+      { studentId, topic: topic || "Discussion libre" },
       {
         studentName,
         messages,
@@ -42,7 +46,6 @@ export async function POST(req: Request) {
         languageLevel: languageLevel || "A1",
         mathLevel: mathLevel || "CP",
         subject: subject || "Mathématiques",
-        topic: topic || "Discussion en cours",
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );

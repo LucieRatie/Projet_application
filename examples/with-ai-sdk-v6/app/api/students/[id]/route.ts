@@ -11,7 +11,16 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
-    const student = await Student.findByIdAndUpdate(id, body, { new: true });
+    let update = body;
+    if (body.action === "addSession") {
+      update = { $addToSet: { sessionIds: body.sessionId } };
+    } else if (body.action === "removeSession") {
+      update = { $pull: { sessionIds: body.sessionId } };
+    }
+
+    const student = await (Student as any).findByIdAndUpdate(id, update, {
+      new: true,
+    });
     return NextResponse.json(student);
   } catch (error) {
     return NextResponse.json(

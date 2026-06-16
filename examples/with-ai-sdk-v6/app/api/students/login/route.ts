@@ -13,9 +13,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "ID manquant" }, { status: 400 });
     }
 
-    const student = await Student.findOne({ studentId }).populate(
-      "currentSessionId",
-    );
+    const student = await Student.findOne({ studentId }).populate("sessionIds");
 
     if (!student) {
       return NextResponse.json({ error: "Élève non trouvé" }, { status: 404 });

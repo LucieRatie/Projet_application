@@ -106,6 +106,105 @@ function printPDF(
   pw.document.close();
 }
 
+function printStudentList(students: any[]) {
+  if (!students || students.length === 0) {
+    alert("Aucun élève à exporter.");
+    return;
+  }
+
+  const levels = [
+    "CP",
+    "CE1",
+    "CE2",
+    "CM1",
+    "CM2",
+    "6ème",
+    "5ème",
+    "4ème",
+    "3ème",
+    "2nde",
+    "1ère",
+    "Terminale",
+  ];
+
+  // Sắp xếp học sinh theo trình độ (mathLevel)
+  const sorted = [...students].sort((a, b) => {
+    const levelOrder =
+      levels.indexOf(a.mathLevel) - levels.indexOf(b.mathLevel);
+    if (levelOrder !== 0) return levelOrder;
+    return (a.lastName || "").localeCompare(b.lastName || "");
+  });
+
+  const dateStr = new Date().toLocaleDateString("fr-FR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
+  const rows = sorted
+    .map(
+      (s, idx) => `
+    <tr>
+      <td style="border:1px solid #ddd;padding:10px;text-align:center">${idx + 1}</td>
+      <td style="border:1px solid #ddd;padding:10px"><b>${(s.lastName || "").toUpperCase()}</b> ${s.firstName || ""}</td>
+      <td style="border:1px solid #ddd;padding:10px;text-align:center">${s.mathLevel || "CP"}</td>
+      <td style="border:1px solid #ddd;padding:10px;font-family:monospace;text-align:center">${s.studentId || ""}</td>
+    </tr>
+  `,
+    )
+    .join("");
+
+  const content = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Annuaire des Élèves</title>
+      <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 40px; color: #333; }
+        h1 { font-size: 24px; text-transform: uppercase; margin-bottom: 5px; color: #000; }
+        .info { font-size: 14px; color: #666; margin-bottom: 30px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #f4f4f4; border: 1px solid #ddd; padding: 12px; text-align: left; text-transform: uppercase; font-size: 11px; font-weight: bold; }
+        td { border: 1px solid #ddd; padding: 10px; font-size: 13px; }
+        .no-print { text-align: center; margin-top: 40px; }
+        @media print { .no-print { display: none; } }
+      </style>
+    </head>
+    <body>
+      <h1>Annuaire des Élèves</h1>
+      <div class="info">Date d'exportation : ${dateStr}</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px;text-align:center">N°</th>
+            <th>Nom et Prénom</th>
+            <th style="width:100px;text-align:center">Classe</th>
+            <th style="width:150px;text-align:center">ID Étudiant</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+      <div class="no-print">
+        <button onclick="window.print()" style="padding:12px 30px;font-size:16px;cursor:pointer;background:#0066cc;color:white;border:none;border-radius:6px;font-weight:bold;">
+          🖨️ Imprimer la liste / PDF
+        </button>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const blob = new Blob([content], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, "_blank");
+
+  if (!win) {
+    alert("Veuillez autoriser các cửa sổ bật lên (popups) để xem danh sách.");
+  }
+}
+
 export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState<
     "monitor" | "students" | "sessions"
@@ -157,10 +256,10 @@ export default function TeacherDashboard() {
   useEffect(() => {
     fetchData();
 
-    // Polling toutes les 5 secondes
+    // Polling toutes les 3 secondes
     const interval = setInterval(() => {
       fetchData(true);
-    }, 5000);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -182,12 +281,12 @@ export default function TeacherDashboard() {
     );
 
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-950 font-sans text-white">
-      {/* Sidebar Gauche */}
-      <aside className="flex w-20 flex-col items-center gap-8 border-r border-zinc-800 bg-zinc-900 py-8 shadow-2xl">
-        <div className="text-3xl">🛡️</div>
+    <div className="flex h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-white md:flex-row">
+      {/* Sidebar (Bottom Bar on Mobile, Left Sidebar on Desktop) */}
+      <aside className="fixed bottom-0 left-0 z-50 flex w-full border-t border-zinc-800 bg-zinc-900/90 py-2 shadow-2xl backdrop-blur-lg md:relative md:h-full md:w-20 md:flex-col md:items-center md:gap-8 md:border-t-0 md:border-r md:py-8">
+        <div className="hidden text-3xl md:block">🛡️</div>
 
-        <nav className="flex flex-col gap-6">
+        <nav className="flex w-full items-center justify-around md:flex-col md:gap-6">
           <NavButton
             active={activeTab === "monitor"}
             onClick={() => setActiveTab("monitor")}
@@ -206,35 +305,37 @@ export default function TeacherDashboard() {
             icon="📅"
             label="Sessions"
           />
+          <button
+            onClick={logout}
+            className="flex flex-col items-center gap-1 text-zinc-600 transition hover:text-white md:mt-auto"
+          >
+            <span className="text-2xl">🚪</span>
+            <span className="text-[10px] font-black tracking-tighter uppercase md:hidden">
+              Quitter
+            </span>
+          </button>
         </nav>
-
-        <button
-          onClick={logout}
-          className="mt-auto text-zinc-600 transition hover:text-white"
-        >
-          🚪
-        </button>
       </aside>
 
       {/* Main Content */}
-      <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-8 backdrop-blur-md">
-          <h1 className="text-xl font-black tracking-widest text-blue-400 uppercase">
+      <main className="flex flex-1 flex-col overflow-hidden pb-16 md:pb-0">
+        <header className="flex h-16 items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 backdrop-blur-md md:px-8">
+          <h1 className="text-sm font-black tracking-widest text-blue-400 uppercase md:text-xl">
             {activeTab === "monitor"
-              ? "Monitorage en direct"
+              ? "Monitorage"
               : activeTab === "students"
-                ? "Gestion des élèves"
-                : "Sessions Pédagogiques"}
+                ? "Élèves"
+                : "Sessions"}
           </h1>
-          <div className="text-xs font-bold tracking-widest text-zinc-500 uppercase">
-            Enseignant : {user?.name}
+          <div className="text-[10px] font-bold tracking-widest text-zinc-500 uppercase md:text-xs">
+            {user?.name}
           </div>
         </header>
 
         <div className="flex-1 overflow-hidden">
           {activeTab === "monitor" && (
-            <div className="flex h-full">
-              <aside className="flex w-64 flex-col gap-2 overflow-y-auto border-r border-zinc-800 p-4">
+            <div className="flex h-full flex-col md:flex-row">
+              <aside className="custom-scrollbar flex h-1/3 flex-col gap-2 overflow-y-auto border-b border-zinc-800 p-2 md:h-full md:w-64 md:border-r md:border-b-0 md:p-4">
                 {(Array.isArray(threads) ? threads : []).map((t) => (
                   <div
                     key={t._id}
@@ -378,9 +479,33 @@ function StudentCard({
         </div>
       </div>
 
-      <h3 className="mt-2 mb-4 text-xl font-black uppercase">
+      <h3 className="mt-2 mb-1 text-xl font-black uppercase">
         {student.firstName} {student.lastName}
       </h3>
+      <div className="mb-4">
+        <span className="text-[10px] font-black tracking-widest text-zinc-600 uppercase">
+          Sessions assignées :
+        </span>
+        <div className="mt-1 flex flex-wrap gap-1">
+          {student.sessionIds && student.sessionIds.length > 0 ? (
+            student.sessionIds.map((sid: string) => {
+              const sess = sessions.find((s: any) => s._id === sid);
+              return sess ? (
+                <div
+                  key={sid}
+                  className="rounded bg-blue-600/20 px-2 py-0.5 text-[10px] font-bold text-blue-400"
+                >
+                  {sess.title}
+                </div>
+              ) : null;
+            })
+          ) : (
+            <div className="text-[10px] font-bold text-zinc-500 italic">
+              Aucune session assignée
+            </div>
+          )}
+        </div>
+      </div>
 
       <div className="mb-6 rounded-xl bg-zinc-950/50 p-4 ring-1 ring-zinc-800">
         <label className="mb-3 block text-[10px] font-black tracking-widest text-zinc-500 uppercase">
@@ -472,25 +597,69 @@ function StudentCard({
         </div>
 
         <div>
-          <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
-            Assigner Session
+          <label className="mb-3 block text-[10px] font-black text-zinc-500 uppercase">
+            Sessions Pédagogiques
           </label>
-          <select
-            value={student.currentSessionId || ""}
-            onChange={(e) =>
-              onUpdate(student._id, {
-                currentSessionId: e.target.value || null,
-              })
-            }
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
-          >
-            <option value="">Aucune session</option>
-            {(Array.isArray(sessions) ? sessions : []).map((sess: any) => (
-              <option key={sess._id} value={sess._id}>
-                {sess.title}
-              </option>
-            ))}
-          </select>
+          <div className="custom-scrollbar max-h-40 space-y-2 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900/50 p-2 text-sm">
+            {(() => {
+              const compatibleSessions = (
+                Array.isArray(sessions) ? sessions : []
+              ).filter((sess: any) => {
+                const isAssigned = student.sessionIds?.includes(sess._id);
+                const isCompatible =
+                  !sess.mathLevel || sess.mathLevel === student.mathLevel;
+                return isCompatible || isAssigned;
+              });
+
+              if (compatibleSessions.length === 0) {
+                return (
+                  <div className="py-4 text-center text-[10px] font-bold text-zinc-600 uppercase">
+                    Aucune session compatible
+                  </div>
+                );
+              }
+
+              return compatibleSessions.map((sess: any) => {
+                const isAssigned = student.sessionIds?.includes(sess._id);
+                const isCompatible =
+                  !sess.mathLevel || sess.mathLevel === student.mathLevel;
+
+                return (
+                  <div
+                    key={sess._id}
+                    className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-1 last:border-0"
+                  >
+                    <div className="flex flex-col">
+                      <span
+                        className={`font-bold ${isCompatible ? "text-zinc-300" : "text-red-400 italic"}`}
+                      >
+                        {sess.title}
+                        {!isCompatible && " (Incompatible)"}
+                      </span>
+                      <span className="font-mono text-[9px] text-zinc-500">
+                        {sess.mathLevel || "Général"}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        onUpdate(student._id, {
+                          action: isAssigned ? "removeSession" : "addSession",
+                          sessionId: sess._id,
+                        });
+                      }}
+                      className={`rounded px-2 py-1 text-[9px] font-black uppercase transition-all ${
+                        isAssigned
+                          ? "bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white"
+                          : "bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white"
+                      }`}
+                    >
+                      {isAssigned ? "Retirer" : "Ajouter"}
+                    </button>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </div>
       </div>
 
@@ -528,6 +697,8 @@ function StudentManager({
   updateStudent,
 }: any) {
   const [showAdd, setShowAdd] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [levelFilter, setLevelFilter] = useState("all");
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -535,6 +706,17 @@ function StudentManager({
     frenchLevel: "A1",
     mathLevel: "CP",
   });
+
+  const filteredStudents = (Array.isArray(students) ? students : []).filter(
+    (s: any) => {
+      const fullName = `${s.firstName} ${s.lastName}`.toLowerCase();
+      const matchesSearch =
+        fullName.includes(searchQuery.toLowerCase()) ||
+        s.studentId.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLevel = levelFilter === "all" || s.mathLevel === levelFilter;
+      return matchesSearch && matchesLevel;
+    },
+  );
 
   const addStudent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -557,21 +739,65 @@ function StudentManager({
   };
 
   return (
-    <div className="h-full overflow-y-auto p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h2 className="text-3xl font-black tracking-tighter uppercase">
+    <div className="custom-scrollbar h-full overflow-y-auto p-4 md:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-xl font-black tracking-tighter uppercase md:text-3xl">
           Annuaire des élèves
         </h2>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold tracking-widest uppercase transition-all hover:bg-blue-500"
-        >
-          + Ajouter un élève
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => printStudentList(filteredStudents)}
+            className="rounded-xl bg-zinc-800 px-6 py-3 text-sm font-bold tracking-widest uppercase transition-all hover:bg-zinc-700"
+          >
+            📄 EXPORTER PDF
+          </button>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold tracking-widest uppercase transition-all hover:bg-blue-500"
+          >
+            + Ajouter un élève
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center">
+        <div className="relative flex-1">
+          <span className="absolute inset-y-0 left-4 flex items-center text-zinc-500">
+            🔍
+          </span>
+          <input
+            type="text"
+            placeholder="Rechercher par nom ou ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/50 py-3 pr-4 pl-12 text-sm text-white transition-all outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-black text-zinc-500 uppercase">
+            Filtrer par classe :
+          </span>
+          <select
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
+            className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-white transition-all outline-none focus:border-blue-500"
+          >
+            <option value="all">Toutes les classes</option>
+            {MATH_LEVELS.map((level) => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </select>
+          <div className="text-xs font-bold text-zinc-600 uppercase">
+            {filteredStudents.length}{" "}
+            {filteredStudents.length > 1 ? "élèves" : "élève"}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {(Array.isArray(students) ? students : []).map((s: any) => (
+        {filteredStudents.map((s: any) => (
           <StudentCard
             key={s._id}
             student={s}
@@ -587,6 +813,15 @@ function StudentManager({
           />
         ))}
       </div>
+
+      {filteredStudents.length === 0 && (
+        <div className="flex h-64 flex-col items-center justify-center rounded-3xl border-2 border-dashed border-zinc-800 text-zinc-500">
+          <div className="text-4xl opacity-20">👤</div>
+          <p className="mt-4 font-bold tracking-widest uppercase">
+            Aucun élève trouvé
+          </p>
+        </div>
+      )}
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
@@ -675,7 +910,10 @@ function SessionManager({ students, sessions, refresh }: any) {
   const [showAdd, setShowAdd] = useState(false);
   const [editingSession, setEditingSession] = useState<any>(null);
   const [showAssign, setShowAssign] = useState<string | null>(null);
+  const [showStudentList, setShowStudentList] = useState<string | null>(null);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [levelFilter, setLevelFilter] = useState("all");
   const [formData, setFormData] = useState({
     title: "",
     objective: "",
@@ -685,6 +923,16 @@ function SessionManager({ students, sessions, refresh }: any) {
   });
 
   const [isUploading, setIsUploading] = useState(false);
+
+  const filteredSessions = (Array.isArray(sessions) ? sessions : []).filter(
+    (s: any) => {
+      const matchesSearch =
+        s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.subject.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLevel = levelFilter === "all" || s.mathLevel === levelFilter;
+      return matchesSearch && matchesLevel;
+    },
+  );
 
   useEffect(() => {
     if (editingSession) {
@@ -762,7 +1010,8 @@ function SessionManager({ students, sessions, refresh }: any) {
       selectedStudents.map((studentId) =>
         fetch(`/api/students/${studentId}`, {
           method: "PATCH",
-          body: JSON.stringify({ currentSessionId: sessionId }),
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "addSession", sessionId }),
         }),
       ),
     );
@@ -772,9 +1021,9 @@ function SessionManager({ students, sessions, refresh }: any) {
   };
 
   return (
-    <div className="h-full overflow-y-auto p-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h2 className="text-3xl font-black tracking-tighter uppercase">
+    <div className="custom-scrollbar h-full overflow-y-auto p-4 md:p-8">
+      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-xl font-black tracking-tighter uppercase md:text-3xl">
           Catalogue des Sessions
         </h2>
         <button
@@ -785,8 +1034,44 @@ function SessionManager({ students, sessions, refresh }: any) {
         </button>
       </div>
 
+      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center">
+        <div className="relative flex-1">
+          <span className="absolute inset-y-0 left-4 flex items-center text-zinc-500">
+            🔍
+          </span>
+          <input
+            type="text"
+            placeholder="Rechercher une session..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/50 py-3 pr-4 pl-12 text-sm text-white transition-all outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-black text-zinc-500 uppercase">
+            Filtrer par niveau :
+          </span>
+          <select
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
+            className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-white transition-all outline-none focus:border-emerald-500"
+          >
+            <option value="all">Tous các niveaux</option>
+            {MATH_LEVELS.map((level) => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </select>
+          <div className="text-xs font-bold text-zinc-600 uppercase">
+            {filteredSessions.length}{" "}
+            {filteredSessions.length > 1 ? "sessions" : "session"}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {(Array.isArray(sessions) ? sessions : []).map((s: any) => (
+        {filteredSessions.map((s: any) => (
           <div
             key={s._id}
             className="group rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl"
@@ -855,8 +1140,21 @@ function SessionManager({ students, sessions, refresh }: any) {
             )}
 
             <div className="flex items-center justify-between">
-              <div className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase">
-                Créé le {new Date(s.createdAt).toLocaleDateString()}
+              <div className="flex flex-col gap-1">
+                <div className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase">
+                  Créé le {new Date(s.createdAt).toLocaleDateString()}
+                </div>
+                <button
+                  onClick={() => setShowStudentList(s._id)}
+                  className="w-fit text-[10px] font-black text-blue-500 uppercase transition-all hover:text-blue-400 hover:underline"
+                >
+                  👥{" "}
+                  {
+                    students.filter((st: any) => st.sessionIds?.includes(s._id))
+                      .length
+                  }{" "}
+                  élèves inscrits
+                </button>
               </div>
               <button
                 onClick={() => setShowAssign(s._id)}
@@ -869,6 +1167,80 @@ function SessionManager({ students, sessions, refresh }: any) {
         ))}
       </div>
 
+      {showStudentList && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
+            <div className="mb-6 flex items-center justify-between">
+              <h3 className="text-2xl font-black uppercase">
+                Liste des élèves
+              </h3>
+              <button
+                onClick={() => setShowStudentList(null)}
+                className="text-zinc-500 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mb-6 max-h-60 space-y-2 overflow-y-auto">
+              {(() => {
+                const sessionStudents = students.filter((st: any) =>
+                  st.sessionIds?.includes(showStudentList),
+                );
+                if (sessionStudents.length === 0) {
+                  return (
+                    <div className="py-8 text-center text-sm font-bold text-zinc-500 uppercase">
+                      Aucun élève dans cette session
+                    </div>
+                  );
+                }
+                return sessionStudents.map((st: any) => (
+                  <div
+                    key={st._id}
+                    className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-800/50 p-4"
+                  >
+                    <div>
+                      <div className="text-sm font-bold text-white uppercase">
+                        {st.firstName} {st.lastName}
+                      </div>
+                      <div className="text-[10px] text-zinc-500">
+                        ID: {st.studentId}
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        if (
+                          confirm(`Retirer ${st.firstName} de cette session ?`)
+                        ) {
+                          await fetch(`/api/students/${st._id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              action: "removeSession",
+                              sessionId: showStudentList,
+                            }),
+                          });
+                          refresh();
+                        }
+                      }}
+                      className="rounded-lg bg-red-600/10 px-3 py-1 text-[10px] font-bold text-red-500 transition-all hover:bg-red-600 hover:text-white"
+                      title="Retirer de la session"
+                    >
+                      Retirer
+                    </button>
+                  </div>
+                ));
+              })()}
+            </div>
+            <button
+              onClick={() => setShowStudentList(null)}
+              className="w-full rounded-xl bg-zinc-800 py-4 font-black tracking-widest uppercase transition-all hover:bg-zinc-700"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
       {showAssign && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
@@ -876,35 +1248,63 @@ function SessionManager({ students, sessions, refresh }: any) {
               Assigner des élèves à la session
             </h3>
             <div className="mb-6 max-h-60 space-y-2 overflow-y-auto">
-              {students.map((st: any) => (
-                <label
-                  key={st._id}
-                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-800/50 p-3 hover:bg-zinc-800"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedStudents.includes(st._id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedStudents([...selectedStudents, st._id]);
-                      } else {
-                        setSelectedStudents(
-                          selectedStudents.filter((id) => id !== st._id),
-                        );
-                      }
-                    }}
-                    className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-blue-600"
-                  />
-                  <div className="flex-1">
-                    <div className="text-sm font-bold uppercase">
-                      {st.firstName} {st.lastName}
+              {students.map((st: any) => {
+                const currentSess = sessions.find(
+                  (sess: any) => sess._id === showAssign,
+                );
+                const isLevelCompatible =
+                  !currentSess?.mathLevel ||
+                  st.mathLevel === currentSess.mathLevel;
+
+                return (
+                  <label
+                    key={st._id}
+                    className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
+                      isLevelCompatible
+                        ? "cursor-pointer border-zinc-800 bg-zinc-800/50 hover:bg-zinc-800"
+                        : "cursor-not-allowed border-red-900/20 bg-red-900/5 opacity-60"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      disabled={!isLevelCompatible}
+                      checked={selectedStudents.includes(st._id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedStudents([...selectedStudents, st._id]);
+                        } else {
+                          setSelectedStudents(
+                            selectedStudents.filter((id) => id !== st._id),
+                          );
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-blue-600 disabled:opacity-30"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm font-bold uppercase">
+                          {st.firstName} {st.lastName}
+                        </div>
+                        <div className="flex gap-2">
+                          {!isLevelCompatible && (
+                            <div className="rounded bg-red-600/20 px-1.5 py-0.5 text-[8px] font-black text-red-400 uppercase">
+                              Incompatible
+                            </div>
+                          )}
+                          <div
+                            className={`rounded px-1.5 py-0.5 text-[9px] font-black ${!isLevelCompatible ? "bg-red-900/40 text-red-300" : "bg-zinc-700 text-amber-400"}`}
+                          >
+                            {st.mathLevel || "CP"}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-zinc-500">
+                        ID: {st.studentId}
+                      </div>
                     </div>
-                    <div className="text-[10px] text-zinc-500">
-                      ID: {st.studentId}
-                    </div>
-                  </div>
-                </label>
-              ))}
+                  </label>
+                );
+              })}
             </div>
             <div className="flex gap-4">
               <button
