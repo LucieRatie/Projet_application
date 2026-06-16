@@ -118,7 +118,9 @@ function StudentChatInner({
   session: any;
   onMessagesChange: (msgs: any[]) => void;
 }) {
-  // useThread runs inside AssistantRuntimeProvider — correct context
+  const [activeTab, setActiveTab] = useState<"chat" | "docs" | "profil">(
+    "chat",
+  );
   const messages = useThread((t) => t.messages);
 
   useEffect(() => {
@@ -127,53 +129,199 @@ function StudentChatInner({
 
   return (
     <div className="flex flex-1 overflow-hidden">
-      {/* Main Chat */}
-      <main className="relative flex-1 overflow-hidden border-r-4 border-black">
-        <Thread />
-      </main>
-
-      {/* Right Sidebar */}
-      <aside className="flex w-80 flex-col gap-6 overflow-y-auto bg-zinc-50 p-6">
-        <h2 className="border-b-4 border-black pb-2 text-xl font-black uppercase">
-          Mes Progrès
-        </h2>
-        <SkillCard
-          label="Vocabulaire"
-          value={user.studentData?.skillsSummary?.vocabulary ?? 0}
-          color="bg-blue-500"
+      {/* Sidebar Navigation (Tabs) */}
+      <aside className="flex w-20 flex-col items-center gap-8 border-r-4 border-black bg-zinc-900 py-8">
+        <TabButton
+          active={activeTab === "chat"}
+          onClick={() => setActiveTab("chat")}
+          icon="💬"
+          label="Chat"
         />
-        <SkillCard
-          label="Grammaire"
-          value={user.studentData?.skillsSummary?.grammar ?? 0}
-          color="bg-emerald-500"
+        <TabButton
+          active={activeTab === "docs"}
+          onClick={() => setActiveTab("docs")}
+          icon="📚"
+          label="Docs"
         />
-        <SkillCard
-          label="Compréhension"
-          value={user.studentData?.skillsSummary?.comprehension ?? 0}
-          color="bg-purple-500"
+        <TabButton
+          active={activeTab === "profil"}
+          onClick={() => setActiveTab("profil")}
+          icon="👤"
+          label="Profil"
         />
-        <SkillCard
-          label="Logique Math"
-          value={user.studentData?.skillsSummary?.mathLogic ?? 0}
-          color="bg-orange-500"
-        />
-
-        <div className="mt-auto rounded-xl border-2 border-yellow-400 bg-yellow-100 p-4">
-          <p className="mb-1 text-xs font-bold tracking-widest text-yellow-800 uppercase">
-            Objectif du jour :
-          </p>
-          <p className="text-base leading-tight font-medium">
-            {session?.objective ?? "Apprendre et progresser avec l'IA."}
-          </p>
-        </div>
       </aside>
+
+      {/* Main Content Area */}
+      <main className="relative flex-1 overflow-hidden bg-white">
+        {activeTab === "chat" && (
+          <div className="flex h-full flex-col overflow-hidden">
+            <div className="flex-1 overflow-hidden">
+              <Thread />
+            </div>
+          </div>
+        )}
+
+        {activeTab === "docs" && (
+          <div className="h-full overflow-y-auto p-8">
+            <h2 className="mb-6 text-3xl font-black tracking-tighter uppercase">
+              📚 Documents de cours
+            </h2>
+            {session?.documents && session.documents.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {session.documents.map((doc: any, idx: number) => (
+                  <a
+                    key={idx}
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-4 rounded-2xl border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1"
+                  >
+                    <div className="text-4xl">📄</div>
+                    <div>
+                      <div className="font-black uppercase">{doc.name}</div>
+                      <div className="text-xs font-bold text-zinc-500">
+                        Cliquer pour ouvrir
+                      </div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="flex h-64 flex-col items-center justify-center rounded-3xl border-4 border-dashed border-zinc-300 bg-zinc-50 text-zinc-400">
+                <div className="text-5xl opacity-30 grayscale">📂</div>
+                <p className="mt-4 font-bold tracking-widest uppercase">
+                  Aucun document pour cette session
+                </p>
+              </div>
+            )}
+
+            <div className="mt-8 rounded-3xl border-4 border-black bg-yellow-100 p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              <h3 className="mb-2 font-black tracking-tight uppercase">
+                💡 Objectif pédagogique
+              </h3>
+              <p className="text-lg leading-relaxed font-medium">
+                {session?.objective ?? "Apprendre et progresser avec l'IA."}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "profil" && (
+          <div className="h-full overflow-y-auto p-8">
+            <h2 className="mb-8 text-3xl font-black tracking-tighter uppercase">
+              👤 Mon Profil
+            </h2>
+
+            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                <h3 className="mb-4 text-sm font-black tracking-widest text-zinc-500 uppercase">
+                  Mes Compétences
+                </h3>
+                <div className="space-y-4">
+                  <SkillBar
+                    label="Vocabulaire"
+                    value={user.studentData?.skillsSummary?.vocabulary ?? 0}
+                    color="bg-blue-500"
+                  />
+                  <SkillBar
+                    label="Grammaire"
+                    value={user.studentData?.skillsSummary?.grammar ?? 0}
+                    color="bg-emerald-500"
+                  />
+                  <SkillBar
+                    label="Compréhension"
+                    value={user.studentData?.skillsSummary?.comprehension ?? 0}
+                    color="bg-purple-500"
+                  />
+                  <SkillBar
+                    label="Logique Math"
+                    value={user.studentData?.skillsSummary?.mathLogic ?? 0}
+                    color="bg-orange-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                  <h3 className="mb-2 text-sm font-black tracking-widest text-zinc-500 uppercase">
+                    Niveaux Actuels
+                  </h3>
+                  <div className="flex gap-3">
+                    <div className="rounded-xl border-2 border-black bg-zinc-100 px-4 py-2 text-center">
+                      <div className="text-[10px] font-black uppercase">FR</div>
+                      <div className="text-lg font-black text-blue-600">
+                        {user.studentData?.frenchLevel}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border-2 border-black bg-zinc-100 px-4 py-2 text-center">
+                      <div className="text-[10px] font-black uppercase">
+                        MATH
+                      </div>
+                      <div className="text-lg font-black text-emerald-600">
+                        {user.studentData?.mathLevel}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border-4 border-black bg-zinc-900 p-6 text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
+                  <h3 className="mb-2 text-sm font-black tracking-widest text-zinc-400 uppercase">
+                    ID Étudiant
+                  </h3>
+                  <code className="text-2xl font-black tracking-widest text-yellow-400">
+                    {user.studentId}
+                  </code>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// StudentChatContent: setup runtime + sync DB
-// ═══════════════════════════════════════════════════════════════════════════════
+function TabButton({ active, onClick, icon, label }: any) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1 transition-all hover:scale-110 ${active ? "text-yellow-400" : "text-zinc-500 hover:text-white"}`}
+    >
+      <span className="text-3xl">{icon}</span>
+      <span className="text-[10px] font-black tracking-tighter uppercase">
+        {label}
+      </span>
+    </button>
+  );
+}
+
+function SkillBar({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <div className="mb-4 rounded-2xl border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-sm font-black tracking-tight uppercase">
+          {label}
+        </span>
+        <span className="text-xl font-black">{value}%</span>
+      </div>
+      <div className="h-5 w-full overflow-hidden rounded-full border-2 border-black bg-zinc-100">
+        <div
+          className={`h-full ${color} transition-all duration-1000`}
+          style={{ width: `${value}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function StudentChatContent({
   initialMessages,
   user,
@@ -185,7 +333,6 @@ function StudentChatContent({
 }) {
   const session = user.studentData?.currentSessionId;
 
-  // Map MongoDB → AI SDK v6 UIMessage
   const sdkInitialMessages = useMemo(
     () => mongoToUIMessages(initialMessages),
     [initialMessages],
@@ -253,7 +400,6 @@ function StudentChatContent({
     [initialMessages.length, syncWithDB],
   );
 
-  // Clean up timer on unmount
   useEffect(() => {
     return () => {
       if (syncTimer.current) clearTimeout(syncTimer.current);
@@ -271,7 +417,6 @@ function StudentChatContent({
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <div className="flex h-screen flex-col bg-white font-sans text-black">
-        {/* Header */}
         <header className="flex items-center justify-between border-b-4 border-black bg-yellow-400 p-5 shadow-md">
           <div className="flex items-center gap-5">
             <div className="text-5xl">🎓</div>
@@ -292,7 +437,9 @@ function StudentChatContent({
                   }`}
                 />
                 <p className="text-sm font-bold uppercase">
-                  {session ? `Session : ${session.title}` : "Discussion libre"}
+                  {session?.title
+                    ? `Session : ${session.title}`
+                    : "Discussion libre"}
                 </p>
               </div>
             </div>
@@ -313,7 +460,6 @@ function StudentChatContent({
           </div>
         </header>
 
-        {/* Body */}
         <StudentChatInner
           user={user}
           session={session}
@@ -324,9 +470,6 @@ function StudentChatContent({
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Page loader – charge l'historique MongoDB avant de monter le runtime
-// ═══════════════════════════════════════════════════════════════════════════════
 export default function StudentChat() {
   const { user, logout } = useAuth();
   const [initialMessages, setInitialMessages] = useState<any[] | null>(null);
@@ -364,30 +507,5 @@ export default function StudentChat() {
       user={user}
       logout={logout}
     />
-  );
-}
-
-function SkillCard({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
-  return (
-    <div className="rounded-2xl border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-black uppercase">{label}</span>
-        <span className="text-xl font-black">{value}%</span>
-      </div>
-      <div className="h-5 w-full overflow-hidden rounded-full border-2 border-black bg-zinc-200">
-        <div
-          className={`h-full ${color} transition-all duration-1000`}
-          style={{ width: `${value}%` }}
-        />
-      </div>
-    </div>
   );
 }

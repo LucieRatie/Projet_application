@@ -19,6 +19,7 @@ interface AuthContextType {
     studentData?: {
       firstName: string;
       lastName: string;
+      nativeLanguage: string;
       frenchLevel: string;
       mathLevel: string;
       currentSession?: any;

@@ -110,17 +110,21 @@ export default function TeacherDashboard() {
         studentsRes.json(),
         sessionsRes.json(),
       ]);
-      setThreads(threadsData);
-      setStudents(studentsData);
-      setSessions(sessionsData);
+
+      if (Array.isArray(threadsData)) setThreads(threadsData);
+      if (Array.isArray(studentsData)) setStudents(studentsData);
+      if (Array.isArray(sessionsData)) setSessions(sessionsData);
 
       // Mettre à jour selectedThread si en cours de visualisation ou sélectionner le premier par défaut si non défini
       setSelectedThread((current: any) => {
-        if (!current) {
-          return threadsData.length > 0 ? threadsData[0] : null;
+        if (!current && Array.isArray(threadsData) && threadsData.length > 0) {
+          return threadsData[0];
         }
-        const updated = threadsData.find((t: any) => t._id === current._id);
-        return updated || current;
+        if (Array.isArray(threadsData)) {
+          const updated = threadsData.find((t: any) => t._id === current?._id);
+          return updated || current;
+        }
+        return current;
       });
     } catch (err) {
       console.error("Error fetching data:", err);
@@ -138,6 +142,15 @@ export default function TeacherDashboard() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  const updateStudent = async (id: string, data: any) => {
+    await fetch(`/api/students/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    fetchData(true);
+  };
 
   if (loading)
     return (
@@ -200,7 +213,7 @@ export default function TeacherDashboard() {
           {activeTab === "monitor" && (
             <div className="flex h-full">
               <aside className="flex w-80 flex-col gap-2 overflow-y-auto border-r border-zinc-800 p-4">
-                {threads.map((t) => (
+                {(Array.isArray(threads) ? threads : []).map((t) => (
                   <div
                     key={t._id}
                     onClick={() => setSelectedThread(t)}
@@ -243,16 +256,46 @@ export default function TeacherDashboard() {
                   </div>
                 ))}
               </aside>
-              <main className="relative flex-1">
-                {selectedThread ? (
-                  <ThreadViewer
-                    key={`${selectedThread._id}-${selectedThread.messages?.length ?? 0}-${selectedThread.updatedAt || ""}`}
-                    thread={selectedThread}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center font-bold tracking-widest text-zinc-600 uppercase">
-                    Sélectionnez une discussion
-                  </div>
+              <main className="relative flex flex-1 overflow-hidden">
+                <div className="flex flex-1 flex-col overflow-hidden">
+                  {selectedThread ? (
+                    <ThreadViewer
+                      key={`${selectedThread._id}-${selectedThread.messages?.length ?? 0}-${selectedThread.updatedAt || ""}`}
+                      thread={selectedThread}
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center font-bold tracking-widest text-zinc-600 uppercase">
+                      Sélectionnez une discussion
+                    </div>
+                  )}
+                </div>
+                {selectedThread && (
+                  <aside className="w-80 overflow-y-auto border-l border-zinc-800 bg-zinc-900/30 p-4">
+                    <h4 className="mb-4 text-[10px] font-black tracking-widest text-zinc-500 uppercase">
+                      Fiche Élève
+                    </h4>
+                    {(() => {
+                      const student = students.find(
+                        (s: any) => s.studentId === selectedThread.studentId,
+                      );
+                      if (!student)
+                        return (
+                          <div className="text-xs text-zinc-600">
+                            Profil non trouvé
+                          </div>
+                        );
+                      return (
+                        <StudentCard
+                          student={student}
+                          sessions={sessions}
+                          threads={threads}
+                          onUpdate={updateStudent}
+                          onDelete={() => {}} // No delete from monitor view
+                          isCompact
+                        />
+                      );
+                    })()}
+                  </aside>
                 )}
               </main>
             </div>
@@ -262,15 +305,190 @@ export default function TeacherDashboard() {
             <StudentManager
               students={students}
               sessions={sessions}
+              threads={threads}
               refresh={fetchData}
+              updateStudent={updateStudent}
             />
           )}
 
           {activeTab === "sessions" && (
-            <SessionManager sessions={sessions} refresh={fetchData} />
+            <SessionManager
+              students={students}
+              sessions={sessions}
+              refresh={fetchData}
+            />
           )}
         </div>
       </main>
+    </div>
+  );
+}
+
+function StudentCard({
+  student,
+  sessions,
+  threads,
+  onUpdate,
+  onDelete,
+  isCompact,
+}: any) {
+  const [localNativeLanguage, setLocalNativeLanguage] = useState(
+    student.nativeLanguage || "",
+  );
+
+  // Update local state if prop changes
+  useEffect(() => {
+    setLocalNativeLanguage(student.nativeLanguage || "");
+  }, [student.nativeLanguage]);
+
+  const studentThreads = (Array.isArray(threads) ? threads : []).filter(
+    (t: any) => t.studentId === student.studentId,
+  );
+  const lastThread = [...studentThreads].sort(
+    (a: any, b: any) =>
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  )[0];
+  const isActive =
+    lastThread &&
+    new Date().getTime() - new Date(lastThread.updatedAt).getTime() <
+      1000 * 60 * 15;
+
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          <div
+            className={`h-2.5 w-2.5 rounded-full ${isActive ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-zinc-700"}`}
+          />
+          <span className="text-[10px] font-bold text-zinc-500 uppercase">
+            {isActive ? "En cours" : "Inactif"}
+          </span>
+        </div>
+        <div className="font-mono text-[10px] font-bold text-blue-500 opacity-40">
+          ID: {student.studentId}
+        </div>
+      </div>
+
+      <h3 className="mt-2 mb-4 text-xl font-black uppercase">
+        {student.firstName} {student.lastName}
+      </h3>
+
+      <div className="mb-6 rounded-xl bg-zinc-950/50 p-4 ring-1 ring-zinc-800">
+        <label className="mb-3 block text-[10px] font-black tracking-widest text-zinc-500 uppercase">
+          Compétences (AI)
+        </label>
+        <div className="space-y-3">
+          <SkillBar
+            label="Vocabulaire"
+            value={student.skillsSummary?.vocabulary ?? 0}
+            color="bg-blue-500"
+          />
+          <SkillBar
+            label="Grammaire"
+            value={student.skillsSummary?.grammar ?? 0}
+            color="bg-purple-500"
+          />
+          <SkillBar
+            label="Compréhension"
+            value={student.skillsSummary?.comprehension ?? 0}
+            color="bg-emerald-500"
+          />
+          <SkillBar
+            label="Logique Math"
+            value={student.skillsSummary?.mathLogic ?? 0}
+            color="bg-amber-500"
+          />
+        </div>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        <LevelBadge label="LANG" value={localNativeLanguage} />
+        <LevelBadge label="FR" value={student.frenchLevel} />
+        <LevelBadge label="MA" value={student.mathLevel} />
+      </div>
+
+      <div className="space-y-4">
+        <div>
+          <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
+            Langue Maternelle
+          </label>
+          <input
+            value={localNativeLanguage}
+            onChange={(e) => setLocalNativeLanguage(e.target.value)}
+            onBlur={() =>
+              onUpdate(student._id, { nativeLanguage: localNativeLanguage })
+            }
+            placeholder="Langue maternelle"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
+          />
+        </div>
+        <div>
+          <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
+            Niveau Français
+          </label>
+          <select
+            value={student.frenchLevel}
+            onChange={(e) =>
+              onUpdate(student._id, { frenchLevel: e.target.value })
+            }
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
+          >
+            <option value="A1">Niveau A1</option>
+            <option value="A2">Niveau A2</option>
+            <option value="B1">Niveau B1</option>
+            <option value="B2">Niveau B2</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
+            Niveau Mathématiques
+          </label>
+          <select
+            value={student.mathLevel}
+            onChange={(e) =>
+              onUpdate(student._id, { mathLevel: e.target.value })
+            }
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
+          >
+            <option value="6ème">6ème</option>
+            <option value="5ème">5ème</option>
+            <option value="4ème">4ème</option>
+            <option value="3ème">3ème</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
+            Assigner Session
+          </label>
+          <select
+            value={student.currentSessionId || ""}
+            onChange={(e) =>
+              onUpdate(student._id, {
+                currentSessionId: e.target.value || null,
+              })
+            }
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
+          >
+            <option value="">Aucune session</option>
+            {(Array.isArray(sessions) ? sessions : []).map((sess: any) => (
+              <option key={sess._id} value={sess._id}>
+                {sess.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {!isCompact && (
+        <button
+          onClick={onDelete}
+          className="mt-6 text-xs font-bold text-red-500 uppercase opacity-0 transition-all group-hover:opacity-100 hover:text-red-400"
+        >
+          Supprimer le profil
+        </button>
+      )}
     </div>
   );
 }
@@ -289,11 +507,18 @@ function NavButton({ active, onClick, icon, label }: any) {
   );
 }
 
-function StudentManager({ students, sessions, refresh }: any) {
+function StudentManager({
+  students,
+  sessions,
+  threads,
+  refresh,
+  updateStudent,
+}: any) {
   const [showAdd, setShowAdd] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    nativeLanguage: "Français",
     frenchLevel: "A1",
     mathLevel: "6ème",
   });
@@ -302,6 +527,7 @@ function StudentManager({ students, sessions, refresh }: any) {
     e.preventDefault();
     const res = await fetch("/api/students", {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
     });
     if (res.ok) {
@@ -309,19 +535,12 @@ function StudentManager({ students, sessions, refresh }: any) {
       setFormData({
         firstName: "",
         lastName: "",
+        nativeLanguage: "Français",
         frenchLevel: "A1",
         mathLevel: "6ème",
       });
       refresh();
     }
-  };
-
-  const updateStudent = async (id: string, data: any) => {
-    await fetch(`/api/students/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-    refresh();
   };
 
   return (
@@ -339,77 +558,20 @@ function StudentManager({ students, sessions, refresh }: any) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {students.map((s: any) => (
-          <div
+        {(Array.isArray(students) ? students : []).map((s: any) => (
+          <StudentCard
             key={s._id}
-            className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl"
-          >
-            <div className="absolute top-0 right-0 p-4 font-mono text-sm font-bold text-blue-500 opacity-30">
-              ID: {s.studentId}
-            </div>
-            <h3 className="mb-4 text-xl font-black uppercase">
-              {s.firstName} {s.lastName}
-            </h3>
-
-            <div className="mb-6 flex gap-2">
-              <LevelBadge label="FR" value={s.frenchLevel} />
-              <LevelBadge label="MA" value={s.mathLevel} />
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
-                  Niveau Français
-                </label>
-                <select
-                  value={s.frenchLevel}
-                  onChange={(e) =>
-                    updateStudent(s._id, { frenchLevel: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
-                >
-                  <option value="A1">Niveau A1</option>
-                  <option value="A2">Niveau A2</option>
-                  <option value="B1">Niveau B1</option>
-                  <option value="B2">Niveau B2</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
-                  Assigner Session
-                </label>
-                <select
-                  value={s.currentSessionId || ""}
-                  onChange={(e) =>
-                    updateStudent(s._id, {
-                      currentSessionId: e.target.value || null,
-                    })
-                  }
-                  className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
-                >
-                  <option value="">Aucune session</option>
-                  {sessions.map((sess: any) => (
-                    <option key={sess._id} value={sess._id}>
-                      {sess.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <button
-              onClick={async () => {
-                if (confirm("Supprimer ?")) {
-                  await fetch(`/api/students/${s._id}`, { method: "DELETE" });
-                  refresh();
-                }
-              }}
-              className="mt-6 text-xs font-bold text-red-500 uppercase opacity-0 transition-all group-hover:opacity-100 hover:text-red-400"
-            >
-              Supprimer le profil
-            </button>
-          </div>
+            student={s}
+            sessions={sessions}
+            threads={threads}
+            onUpdate={updateStudent}
+            onDelete={async () => {
+              if (confirm("Supprimer ?")) {
+                await fetch(`/api/students/${s._id}`, { method: "DELETE" });
+                refresh();
+              }
+            }}
+          />
         ))}
       </div>
 
@@ -436,6 +598,15 @@ function StudentManager({ students, sessions, refresh }: any) {
                 }
                 required
               />
+              <input
+                placeholder="Langue Maternelle"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 p-4 outline-none"
+                value={formData.nativeLanguage}
+                onChange={(e) =>
+                  setFormData({ ...formData, nativeLanguage: e.target.value })
+                }
+                required
+              />
               <button
                 type="submit"
                 className="w-full rounded-xl bg-blue-600 py-4 font-black tracking-widest uppercase"
@@ -457,13 +628,30 @@ function StudentManager({ students, sessions, refresh }: any) {
   );
 }
 
-function SessionManager({ sessions, refresh }: any) {
+function SessionManager({ students, sessions, refresh }: any) {
   const [showAdd, setShowAdd] = useState(false);
+  const [showAssign, setShowAssign] = useState<string | null>(null);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     objective: "",
     subject: "Mathématiques",
+    documents: [] as { name: string; url: string }[],
   });
+
+  const [docName, setDocName] = useState("");
+  const [docUrl, setDocUrl] = useState("");
+
+  const addDocument = () => {
+    if (docName && docUrl) {
+      setFormData({
+        ...formData,
+        documents: [...formData.documents, { name: docName, url: docUrl }],
+      });
+      setDocName("");
+      setDocUrl("");
+    }
+  };
 
   const addSession = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -473,9 +661,28 @@ function SessionManager({ sessions, refresh }: any) {
     });
     if (res.ok) {
       setShowAdd(false);
-      setFormData({ title: "", objective: "", subject: "Mathématiques" });
+      setFormData({
+        title: "",
+        objective: "",
+        subject: "Mathématiques",
+        documents: [],
+      });
       refresh();
     }
+  };
+
+  const batchAssign = async (sessionId: string) => {
+    await Promise.all(
+      selectedStudents.map((studentId) =>
+        fetch(`/api/students/${studentId}`, {
+          method: "PATCH",
+          body: JSON.stringify({ currentSessionId: sessionId }),
+        }),
+      ),
+    );
+    setShowAssign(null);
+    setSelectedStudents([]);
+    refresh();
   };
 
   return (
@@ -493,7 +700,7 @@ function SessionManager({ sessions, refresh }: any) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        {sessions.map((s: any) => (
+        {(Array.isArray(sessions) ? sessions : []).map((s: any) => (
           <div
             key={s._id}
             className="group rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl"
@@ -518,12 +725,101 @@ function SessionManager({ sessions, refresh }: any) {
             <p className="mb-4 text-sm leading-relaxed text-zinc-400">
               {s.objective}
             </p>
-            <div className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase">
-              Créé le {new Date(s.createdAt).toLocaleDateString()}
+
+            {s.documents && s.documents.length > 0 && (
+              <div className="mb-4">
+                <label className="mb-1 block text-[10px] font-black text-zinc-600 uppercase">
+                  Documents
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {s.documents.map((doc: any, idx: number) => (
+                    <a
+                      key={idx}
+                      href={doc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded bg-zinc-800 px-2 py-1 text-[10px] text-blue-400 hover:underline"
+                    >
+                      📄 {doc.name}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase">
+                Créé le {new Date(s.createdAt).toLocaleDateString()}
+              </div>
+              <button
+                onClick={() => setShowAssign(s._id)}
+                className="rounded-lg bg-blue-600/20 px-3 py-1 text-[10px] font-bold text-blue-400 transition hover:bg-blue-600 hover:text-white"
+              >
+                👥 Assigner des élèves
+              </button>
             </div>
           </div>
         ))}
       </div>
+
+      {showAssign && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
+            <h3 className="mb-6 text-2xl font-black uppercase">
+              Assigner des élèves à la session
+            </h3>
+            <div className="mb-6 max-h-60 space-y-2 overflow-y-auto">
+              {students.map((st: any) => (
+                <label
+                  key={st._id}
+                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-800/50 p-3 hover:bg-zinc-800"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedStudents.includes(st._id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedStudents([...selectedStudents, st._id]);
+                      } else {
+                        setSelectedStudents(
+                          selectedStudents.filter((id) => id !== st._id),
+                        );
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-blue-600"
+                  />
+                  <div className="flex-1">
+                    <div className="text-sm font-bold uppercase">
+                      {st.firstName} {st.lastName}
+                    </div>
+                    <div className="text-[10px] text-zinc-500">
+                      ID: {st.studentId}
+                    </div>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => batchAssign(showAssign)}
+                disabled={selectedStudents.length === 0}
+                className="flex-1 rounded-xl bg-blue-600 py-4 font-black tracking-widest uppercase disabled:opacity-50"
+              >
+                Assigner {selectedStudents.length} élèves
+              </button>
+              <button
+                onClick={() => {
+                  setShowAssign(null);
+                  setSelectedStudents([]);
+                }}
+                className="flex-1 py-4 font-bold text-zinc-500"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
@@ -561,6 +857,60 @@ function SessionManager({ sessions, refresh }: any) {
                 <option value="Français">Français</option>
                 <option value="Sciences">Sciences</option>
               </select>
+
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+                <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
+                  Ajouter Documents
+                </label>
+                <div className="mb-4 space-y-2">
+                  {formData.documents.map((doc, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between text-xs text-zinc-400"
+                    >
+                      <span>
+                        {doc.name} ({doc.url})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            documents: formData.documents.filter(
+                              (_, i) => i !== idx,
+                            ),
+                          })
+                        }
+                        className="text-red-500"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    placeholder="Nom du doc"
+                    className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-xs outline-none"
+                    value={docName}
+                    onChange={(e) => setDocName(e.target.value)}
+                  />
+                  <input
+                    placeholder="URL (http...)"
+                    className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-xs outline-none"
+                    value={docUrl}
+                    onChange={(e) => setDocUrl(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={addDocument}
+                    className="rounded-lg bg-zinc-700 px-4 text-xs font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 className="w-full rounded-xl bg-emerald-600 py-4 font-black tracking-widest uppercase"
@@ -587,6 +937,23 @@ function LevelBadge({ label, value }: { label: string; value: string }) {
     <div className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1">
       <span className="text-[10px] font-black text-zinc-500">{label}:</span>
       <span className="text-xs font-bold text-blue-400">{value}</span>
+    </div>
+  );
+}
+
+function SkillBar({ label, value, color }: any) {
+  return (
+    <div>
+      <div className="mb-1 flex justify-between text-[9px] font-bold uppercase">
+        <span className="text-zinc-400">{label}</span>
+        <span className="text-white">{value}%</span>
+      </div>
+      <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
+        <div
+          className={`h-full ${color} transition-all duration-500`}
+          style={{ width: `${value}%` }}
+        />
+      </div>
     </div>
   );
 }
