@@ -31,7 +31,7 @@ function init_chat(objective, name, french_level, math_level, resume) {
 function invoke(prompt) {
     //reformuler le prompt
     //interroger le rag
-    //repondre avec prompt + reponse RAG
+    //repondre avec prompt + reponse RAG+ historique
 }
 
 /**
