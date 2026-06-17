@@ -10,19 +10,19 @@ workflow.add_node("Summary_Node", summary_node)
 
 
 def route_entry(state: AgentState) -> str:
-    """Routing à l'entrée : session normale ou fin de session."""
+    """routing à l'entree : session normale ou fin de session."""
     if state.get('session_ended', False):
         return "Summary_Node"
     return "RAG_Node"
 
 
-# Entrée conditionnelle : chaque appel invoke() est routé ici en premier
+# conditionnal edge : chaque appel invoke() est routr ici en premier
 workflow.add_conditional_edges(START, route_entry, {
     "RAG_Node": "RAG_Node",
     "Summary_Node": "Summary_Node"
 })
 
-# Flux normal : RAG répond → Llama évalue → fin du tour
+# Flux normal : RAG repond → Llama evalue → fin du tour
 workflow.add_edge("RAG_Node", "Evaluate_Node")
 workflow.add_edge("Evaluate_Node", END)
 

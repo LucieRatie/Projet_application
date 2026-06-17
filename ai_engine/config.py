@@ -10,9 +10,11 @@ print(f"Connect Server a IP: {server_url}")
 
 llm_qwen_student = ChatOllama(
     base_url=server_url,
-    model="qwen3.5:0.8b",
+    # model="qwen3.5:0.8b",
+    model="llama3.2:1b",
     temperature=0.7,
     num_ctx=4096,
+    think=False,
     client_kwargs={"timeout": 120.0}
 )
 

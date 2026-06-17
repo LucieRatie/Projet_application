@@ -2,28 +2,21 @@ from ai_engine.config import llm_qwen_student, llm_llama_prof
 from ai_engine.schemas import AgentState, TourAnalysis
 from ai_engine.rag_service import retrieve_math_concept
 
+#Definir le form retourne de IA prof
 structured_llama_prof = llm_llama_prof.with_structured_output(TourAnalysis)
 
 
 def rag_node(state: AgentState):
-    """Reçoit la question de l'élève, interroge le PDF, Qwen génère une explication pédagogique."""
+    """Recoit la question de l'eleve, interroge le PDF, Qwen genere une explication pedagogique."""
     print("\n[NODE] -> RAG Node: recherche PDF + réponse pédagogique via Qwen...")
 
     context = retrieve_math_concept(state['student_question'])
 
-    prompt = f"""Tu es un tuteur de mathématiques bienveillant et pédagogue.
-Un élève de niveau français {state['french_level']} te pose cette question :
-
-« {state['student_question']} »
-
-Voici les extraits du manuel scolaire pertinents pour répondre :
----
-{context}
----
-
-Réponds à l'élève en français clair et adapté à son niveau.
-Explique le concept étape par étape en t'appuyant sur le manuel.
-Ne donne pas directement la réponse finale si c'est un exercice — guide l'élève."""
+    prompt = f"""Tu es un tuteur de mathématiques bienveillant et pédagogue.Un élève de niveau français {state['french_level']} te pose cette question : « {state['student_question']} »
+        Voici les extraits du manuel scolaire pertinents pour répondre : --- {context} ---
+        Réponds à l'élève en français clair et adapté à son niveau.
+        Explique le concept étape par étape en t'appuyant sur le manuel.
+        Ne donne pas directement la réponse finale si c'est un exercice — guide l'élève."""
 
     response = llm_qwen_student.invoke(prompt)
     return {"tutor_answer": response.content}
@@ -34,7 +27,6 @@ def evaluate_node(state: AgentState):
     print("\n[NODE] -> Evaluate Node: analyse comportementale et pédagogique via Llama Prof...")
 
     num_tour = len(state['evaluations_history']) + 1
-
     history = state.get('conversation_history', [])
     history_str = ""
     if history:
@@ -48,21 +40,18 @@ def evaluate_node(state: AgentState):
         history_str = "Aucun échange précédent — premier tour de la session."
 
     prompt = f"""Tu es un professeur expert en pédagogie et en psychologie de l'apprentissage.
-
-=== HISTORIQUE DE LA SESSION ===
-{history_str}
-=== ÉCHANGE ACTUEL (Tour {num_tour}) ===
-Élève : {state['student_question']}
-Tuteur : {state['tutor_answer']}
-
-Analyse cet échange en te basant sur TOUT l'historique de la session :
-
-1. ERREURS DE LANGUE : relève les fautes d'orthographe, de grammaire ou de syntaxe dans la formulation de la question de l'élève.
-2. ERREURS MATHÉMATIQUES : identifie les incompréhensions conceptuelles ou les erreurs de logique révélées par la façon dont l'élève formule sa question.
-3. COMPORTEMENT : décris le comportement observable (curiosité, frustration, progrès, hésitation, répétition d'erreurs...).
-4. ANALYSE PSYCHOLOGIQUE : évalue le niveau de confiance, la motivation et les éventuels blocages affectifs ou cognitifs.
-5. NIVEAU DE COMPRÉHENSION : estime le niveau global (faible / moyen / bon) en comparant avec les tours précédents.
-6. RECOMMANDATION : propose une action pédagogique concrète pour le prochain tour."""
+        === HISTORIQUE DE LA SESSION ===
+        {history_str}
+        === ÉCHANGE ACTUEL (Tour {num_tour}) ===
+        Élève : {state['student_question']}
+        Tuteur : {state['tutor_answer']}
+        Analyse cet échange en te basant sur TOUT l'historique de la session :
+        1. ERREURS DE LANGUE : relève les fautes d'orthographe, de grammaire ou de syntaxe dans la formulation de la question de l'élève.
+        2. ERREURS MATHÉMATIQUES : identifie les incompréhensions conceptuelles ou les erreurs de logique révélées par la façon dont l'élève formule sa question.
+        3. COMPORTEMENT : décris le comportement observable (curiosité, frustration, progrès, hésitation, répétition d'erreurs...).
+        4. ANALYSE PSYCHOLOGIQUE : évalue le niveau de confiance, la motivation et les éventuels blocages affectifs ou cognitifs.
+        5. NIVEAU DE COMPRÉHENSION : estime le niveau global (faible / moyen / bon) en comparant avec les tours précédents.
+        6. RECOMMANDATION : propose une action pédagogique concrète pour le prochain tour."""
 
     analysis = structured_llama_prof.invoke(prompt)
     analysis.numero_tour = num_tour
@@ -84,7 +73,7 @@ Analyse cet échange en te basant sur TOUT l'historique de la session :
 
 
 def summary_node(state: AgentState):
-    """Déclenché par 'Fin de session' — agrège toutes les fiches Llama en rapport final."""
+    """Declenche par 'fin de session' — agrege toutes les fiches llama en rapport final."""
     print("\n[NODE] -> Summary Node: génération du rapport de fin de session via Llama...")
 
     conv_str = ""
@@ -105,19 +94,17 @@ def summary_node(state: AgentState):
         )
 
     prompt = f"""Tu es un professeur de mathématiques. Rédige un rapport pédagogique de fin de session en français.
-
-=== ÉCHANGES COMPLETS DE LA SESSION ===
-{conv_str}
-=== FICHES D'ANALYSE PAR TOUR ===
-{fiches_str}
-
-Le rapport doit être structuré ainsi :
-1. Résumé de la session (thèmes abordés, nombre de questions)
-2. Points forts observés chez l'élève
-3. Erreurs récurrentes (langue et mathématiques)
-4. Profil comportemental et psychologique de l'élève
-5. Recommandations pédagogiques personnalisées pour la prochaine session
-6. Évaluation globale de la session"""
+        === ÉCHANGES COMPLETS DE LA SESSION ===
+        {conv_str}
+        === FICHES D'ANALYSE PAR TOUR ===
+        {fiches_str}
+        Le rapport doit être structuré ainsi :
+        1. Résumé de la session (thèmes abordés, nombre de questions)
+        2. Points forts observés chez l'élève
+        3. Erreurs récurrentes (langue et mathématiques)
+        4. Profil comportemental et psychologique de l'élève
+        5. Recommandations pédagogiques personnalisées pour la prochaine session
+        6. Évaluation globale de la session"""
 
     response = llm_llama_prof.invoke(prompt)
     return {"final_report": response.content}

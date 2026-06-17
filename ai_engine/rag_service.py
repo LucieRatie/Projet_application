@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-
 import chromadb
 from chromadb.config import Settings
 # pyrefly: ignore [missing-import]
@@ -14,7 +13,7 @@ load_dotenv()
 
 DATA_DIR   = Path(__file__).parent / "data"
 CHROMA_DIR = Path(__file__).parent / "chroma_db"
-OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http/:/localhost:11434")
+OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 COLLECTION = "math_docs"
 
 _embeddings    = OllamaEmbeddings(base_url=OLLAMA_URL, model="nomic-embed-text:latest")
