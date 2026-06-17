@@ -338,7 +338,7 @@ const AssistantMessage: FC = () => {
     >
       <div
         data-slot="aui_assistant-message-content"
-        className="inline-block max-w-[85%] rounded-[18px] rounded-tl-[4px] bg-[#E4E6EB] px-4 py-2 text-[15px] leading-snug text-black"
+        className="inline-block max-w-[85%] rounded-[18px] rounded-tl-[4px] bg-zinc-100 px-4 py-2 text-[15px] leading-snug text-zinc-900"
       >
         <MessagePrimitive.GroupedParts
           groupBy={groupPartByType({
@@ -476,7 +476,7 @@ const UserMessage: FC = () => {
       <UserMessageAttachments />
 
       <div className="aui-user-message-content-wrapper relative max-w-[85%]">
-        <div className="aui-user-message-content peer rounded-[18px] rounded-tr-[4px] bg-[#0084FF] px-4 py-2 text-[15px] leading-snug wrap-break-word text-white empty:hidden">
+        <div className="aui-user-message-content peer rounded-[18px] rounded-tr-[4px] bg-orange-500 px-4 py-2 text-[15px] leading-snug wrap-break-word text-white empty:hidden">
           <MessagePrimitive.Parts />
         </div>
         <div className="aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 opacity-0 transition-opacity peer-empty:hidden hover:opacity-100 rtl:translate-x-full">

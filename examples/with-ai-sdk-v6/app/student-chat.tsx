@@ -11,8 +11,8 @@ import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
-  MessageCircle,
-  BookOpen,
+  MessageSquareHeart,
+  Sparkles,
   History,
   User,
   GraduationCap,
@@ -25,6 +25,8 @@ import {
   LogOut,
   Printer,
   ChevronDown,
+  BookOpenText,
+  Smile,
 } from "lucide-react";
 
 // ─── helper: extraire le texte brut d'un message (ThreadMessage ou MongoDB brut) ────
@@ -167,17 +169,17 @@ function StudentChatInner({
   return (
     <div className="flex flex-1 overflow-hidden bg-[#F4F4F5]">
       {/* 1. Global Navigation Bar (Leftmost) */}
-      <aside className="flex w-22 flex-col items-center gap-10 border-r-[5px] border-black bg-zinc-900 py-10 shadow-[5px_0px_0px_0px_rgba(0,0,0,0.1)]">
+      <aside className="flex w-22 flex-col items-center gap-10 border-r border-zinc-200 bg-white py-10">
         <TabButton
           active={activeTab === "chat"}
           onClick={() => setActiveTab("chat")}
-          icon="💬"
+          icon={<MessageSquareHeart size={28} />}
           label="Chat"
         />
         <TabButton
           active={activeTab === "docs"}
           onClick={() => setActiveTab("docs")}
-          icon="📚"
+          icon={<BookOpenText size={28} />}
           label="Docs"
         />
       </aside>
@@ -196,7 +198,8 @@ function StudentChatInner({
               <div className="flex h-full w-[280px] flex-col overflow-hidden">
                 <div className="border-b-[5px] border-black bg-[#FFD600] p-5 shadow-sm">
                   <h2 className="flex items-center gap-2 text-sm font-black tracking-widest text-black uppercase">
-                    <span className="text-lg">📜</span> Historique
+                    <Sparkles className="text-yellow-500" size={20} />{" "}
+                    Historique
                   </h2>
                 </div>
                 <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-zinc-50/50 p-5">
@@ -436,9 +439,11 @@ function TabButton({ active, onClick, icon, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 transition-all hover:scale-110 md:gap-1 ${active ? "text-yellow-400" : "text-zinc-500 hover:text-white"}`}
+      className={`flex flex-col items-center gap-0.5 transition-all hover:scale-110 md:gap-1 ${
+        active ? "text-blue-600" : "text-zinc-400 hover:text-zinc-600"
+      }`}
     >
-      <span className="text-xl md:text-3xl">{icon}</span>
+      {icon}
       <span className="text-[8px] font-black tracking-tighter uppercase md:text-[10px]">
         {label}
       </span>

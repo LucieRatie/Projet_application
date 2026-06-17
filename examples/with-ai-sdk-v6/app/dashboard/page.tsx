@@ -8,6 +8,21 @@ import {
   useThread,
 } from "@assistant-ui/react";
 import { useAuth } from "@/lib/auth-context";
+import {
+  Monitor,
+  Users,
+  CalendarDays,
+  LogOut,
+  ShieldCheck,
+} from "lucide-react";
+
+// ... rest of the file ...
+// In NavButton/Sidebar, update the icons:
+// <ShieldCheck size={28} />
+// <Monitor size={28} />
+// <Users size={28} />
+// <CalendarDays size={28} />
+// <LogOut size={28} />
 
 const MATH_LEVELS = ["<6ème", "6ème", "5ème", "4ème", "3ème", ">3ème"];
 
@@ -258,32 +273,34 @@ export default function TeacherDashboard() {
     <div className="flex h-screen flex-col overflow-hidden bg-zinc-50 font-sans text-zinc-900 md:flex-row">
       {/* Sidebar (Bottom Bar on Mobile, Left Sidebar on Desktop) */}
       <aside className="fixed bottom-0 left-0 z-50 flex w-full border-t border-zinc-200 bg-white/90 py-2 shadow-xl backdrop-blur-lg md:relative md:h-full md:w-20 md:flex-col md:items-center md:gap-8 md:border-t-0 md:border-r md:py-8">
-        <div className="hidden text-3xl md:block">🛡️</div>
+        <div className="hidden text-zinc-800 md:block">
+          <ShieldCheck size={32} />
+        </div>
 
         <nav className="flex w-full items-center justify-around md:flex-col md:gap-6">
           <NavButton
             active={activeTab === "monitor"}
             onClick={() => setActiveTab("monitor")}
-            icon="📺"
+            icon={<Monitor size={28} />}
             label="Suivi"
           />
           <NavButton
             active={activeTab === "students"}
             onClick={() => setActiveTab("students")}
-            icon="👥"
+            icon={<Users size={28} />}
             label="Élèves"
           />
           <NavButton
             active={activeTab === "sessions"}
             onClick={() => setActiveTab("sessions")}
-            icon="📅"
+            icon={<CalendarDays size={28} />}
             label="Sessions"
           />
           <button
             onClick={logout}
             className="flex flex-col items-center gap-1 text-zinc-500 transition hover:text-red-500 md:mt-auto"
           >
-            <span className="text-2xl">🚪</span>
+            <LogOut size={28} />
             <span className="text-[10px] font-black tracking-tighter uppercase md:hidden">
               Quitter
             </span>
@@ -704,9 +721,11 @@ function NavButton({ active, onClick, icon, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-1 transition-all ${active ? "scale-110 text-blue-500" : "text-zinc-500 hover:text-zinc-300"}`}
+      className={`flex flex-col items-center gap-1 transition-all ${
+        active ? "scale-110 text-blue-600" : "text-zinc-400 hover:text-zinc-600"
+      }`}
     >
-      <span className="text-2xl">{icon}</span>
+      {icon}
       <span className="text-[10px] font-black tracking-tighter uppercase">
         {label}
       </span>
@@ -1207,15 +1226,15 @@ function SessionManager({ students, sessions, refresh }: any) {
       </div>
 
       {showStudentList && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/20 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl">
             <div className="mb-6 flex items-center justify-between">
-              <h3 className="text-2xl font-black uppercase">
+              <h3 className="text-2xl font-black text-zinc-900 uppercase">
                 Liste des élèves
               </h3>
               <button
                 onClick={() => setShowStudentList(null)}
-                className="text-zinc-500 hover:text-white"
+                className="text-zinc-500 hover:text-zinc-900"
               >
                 ✕
               </button>
@@ -1235,10 +1254,10 @@ function SessionManager({ students, sessions, refresh }: any) {
                 return sessionStudents.map((st: any) => (
                   <div
                     key={st._id}
-                    className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-800/50 p-4"
+                    className="flex items-center justify-between rounded-xl border border-zinc-100 bg-zinc-50 p-4"
                   >
                     <div>
-                      <div className="text-sm font-bold text-white uppercase">
+                      <div className="text-sm font-bold text-zinc-900 uppercase">
                         {st.firstName} {st.lastName}
                       </div>
                       <div className="text-[10px] text-zinc-500">
@@ -1261,7 +1280,7 @@ function SessionManager({ students, sessions, refresh }: any) {
                           refresh();
                         }
                       }}
-                      className="rounded-lg bg-red-600/10 px-3 py-1 text-[10px] font-bold text-red-500 transition-all hover:bg-red-600 hover:text-white"
+                      className="rounded-lg bg-red-50 px-3 py-1 text-[10px] font-bold text-red-600 transition-all hover:bg-red-600 hover:text-white"
                       title="Retirer de la session"
                     >
                       Retirer
@@ -1272,7 +1291,7 @@ function SessionManager({ students, sessions, refresh }: any) {
             </div>
             <button
               onClick={() => setShowStudentList(null)}
-              className="w-full rounded-xl bg-zinc-800 py-4 font-black tracking-widest uppercase transition-all hover:bg-zinc-700"
+              className="w-full rounded-xl bg-zinc-100 py-4 font-black tracking-widest text-zinc-900 uppercase transition-all hover:bg-zinc-200"
             >
               Fermer
             </button>
@@ -1281,9 +1300,9 @@ function SessionManager({ students, sessions, refresh }: any) {
       )}
 
       {showAssign && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
-            <h3 className="mb-6 text-2xl font-black uppercase">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/20 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl">
+            <h3 className="mb-6 text-2xl font-black text-zinc-900 uppercase">
               Assigner des élèves à la session
             </h3>
             <div className="mb-6 max-h-60 space-y-2 overflow-y-auto">
@@ -1300,8 +1319,8 @@ function SessionManager({ students, sessions, refresh }: any) {
                     key={st._id}
                     className={`flex items-center gap-3 rounded-xl border p-3 transition-all ${
                       isLevelCompatible
-                        ? "cursor-pointer border-zinc-800 bg-zinc-800/50 hover:bg-zinc-800"
-                        : "cursor-not-allowed border-red-900/20 bg-red-900/5 opacity-60"
+                        ? "cursor-pointer border-zinc-200 bg-zinc-50 hover:bg-zinc-100"
+                        : "cursor-not-allowed border-red-100 bg-red-50/50 opacity-60"
                     }`}
                   >
                     <input
@@ -1317,21 +1336,25 @@ function SessionManager({ students, sessions, refresh }: any) {
                           );
                         }
                       }}
-                      className="h-4 w-4 rounded border-zinc-700 bg-zinc-900 text-blue-600 disabled:opacity-30"
+                      className="h-4 w-4 rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                     />
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
-                        <div className="text-sm font-bold uppercase">
+                        <div className="text-sm font-bold text-zinc-900 uppercase">
                           {st.firstName} {st.lastName}
                         </div>
                         <div className="flex gap-2">
                           {!isLevelCompatible && (
-                            <div className="rounded bg-red-600/20 px-1.5 py-0.5 text-[8px] font-black text-red-400 uppercase">
+                            <div className="rounded bg-red-100 px-1.5 py-0.5 text-[8px] font-black text-red-600 uppercase">
                               Incompatible
                             </div>
                           )}
                           <div
-                            className={`rounded px-1.5 py-0.5 text-[9px] font-black ${!isLevelCompatible ? "bg-red-900/40 text-red-300" : "bg-zinc-700 text-amber-400"}`}
+                            className={`rounded px-1.5 py-0.5 text-[9px] font-black ${
+                              !isLevelCompatible
+                                ? "bg-red-100 text-red-700"
+                                : "bg-emerald-100 text-emerald-800"
+                            }`}
                           >
                             {st.mathLevel || "<6ème"}
                           </div>
@@ -1418,7 +1441,7 @@ function SessionManager({ students, sessions, refresh }: any) {
                 ))}
               </select>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+              <div className="rounded-xl border border-zinc-200 bg-white p-4">
                 <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
                   Documents de la session
                 </label>
@@ -1426,7 +1449,7 @@ function SessionManager({ students, sessions, refresh }: any) {
                   {formData.documents.map((doc, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between rounded-lg bg-zinc-800 p-2 text-xs text-zinc-300"
+                      className="flex items-center justify-between rounded-lg bg-zinc-100 p-2 text-xs text-zinc-700"
                     >
                       <span className="truncate pr-4">📄 {doc.name}</span>
                       <button
