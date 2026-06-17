@@ -4,8 +4,8 @@
  * @param {string[]} list_file_path - Liste des chemins d'accès aux fichiers à indexer.
  * @returns {void} Ne retourne aucune valeur.
  */
-function init_session(list_file_path) {
-    // Code de la fonction
+function add_context(list_file_path) {
+    // Vectoriser les fichiers
 }
 
 /**
@@ -19,7 +19,7 @@ function init_session(list_file_path) {
  * @returns {void} Ne retourne aucune valeur.
  */
 function init_chat(objective, name, french_level, math_level, resume) {
-    // Code de la fonction
+    // Il faut faire un prompt system avec tous les elements
 }
 
 /**
@@ -29,7 +29,9 @@ function init_chat(objective, name, french_level, math_level, resume) {
  * @returns {string} La réponse textuelle générée par le modèle Qwen.
  */
 function invoke(prompt) {
-    // Code de la fonction
+    //reformuler le prompt
+    //interroger le rag
+    //repondre avec prompt + reponse RAG
 }
 
 /**
@@ -38,5 +40,5 @@ function invoke(prompt) {
  * @returns {Array<{role: string, content: string}>} Liste des messages de la discussion (format standard type OpenAI/Qwen).
  */
 function get_discussion() {
-    // Code de la fonction
+    // retourner l'ensemble [{role:"user",content:"je ne comprend pas..."}]
 }
