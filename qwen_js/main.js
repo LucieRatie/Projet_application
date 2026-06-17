@@ -1,3 +1,7 @@
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { OllamaLLM } from "@langchain/ollama";
+import dotenv from "dotenv";
+
 /**
  * Vectorise et stocke une liste de fichiers dans la base de données RAG.
  *
@@ -20,6 +24,8 @@ function add_context(list_file_path) {
  */
 function init_chat(objective, name, french_level, math_level, resume) {
     // Il faut faire un prompt system avec tous les elements
+    
+
 }
 
 /**
@@ -41,4 +47,28 @@ function invoke(prompt) {
  */
 function get_discussion() {
     // retourner l'ensemble [{role:"user",content:"je ne comprend pas..."}]
+}
+
+//Initialisation dotenv
+dotenv.config();
+
+export function getModel(isOnline, temperature) {
+    let model;
+    if (is_online) {
+        console.log("🤖 Initialisation de Gemini (Online)...")
+        model = new ChatGoogleGenerativeAI({
+            modelName: "gemini-2.5-flash",
+            temperature: temperature,
+        });
+    }
+    else {
+        console.log("🦙 Initialisation de Ollama/Llama3 (Local)...")
+        model = new OllamaLLM({
+            modelName:"qwen-no-think",
+            temperature: temperature,
+            maxRetries:3,
+            baseUrl:"http://localhost:11434"
+        });
+    }
+    return model;
 }
