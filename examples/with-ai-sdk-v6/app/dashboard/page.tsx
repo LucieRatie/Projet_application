@@ -60,7 +60,9 @@ function printPDF(
   }
   const pw = window.open("", "_blank");
   if (!pw) {
-    toast.error("Veuillez autoriser các cửa sổ bật lên (popups) để in.");
+    toast.error(
+      "Veuillez autoriser les fenêtres contextuelles (popups) pour imprimer.",
+    );
     return;
   }
   const dateStr = new Date().toLocaleDateString("fr-FR", {
@@ -118,7 +120,7 @@ function printStudentList(students: any[]) {
 
   const levels = ["<6ème", "6ème", "5ème", "4ème", "3ème", ">3ème"];
 
-  // Sắp xếp học sinh theo trình độ (mathLevel)
+  // Trier les élèves par niveau (mathLevel)
   const sorted = [...students].sort((a, b) => {
     const levelOrder =
       levels.indexOf(a.mathLevel) - levels.indexOf(b.mathLevel);
@@ -193,7 +195,7 @@ function printStudentList(students: any[]) {
 
   if (!win) {
     toast.error(
-      "Veuillez autoriser các cửa sổ bật lên (popups) để xem danh sách.",
+      "Veuillez autoriser les fenêtres contextuelles (popups) pour voir la liste.",
     );
   }
 }
