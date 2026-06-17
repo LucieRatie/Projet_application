@@ -13,5 +13,7 @@
 
 
     }
-  }
+  },
+  "SrcDataBase": "./RAG_SANSdata",
+  "VectDataBase": "./test_base"
 }

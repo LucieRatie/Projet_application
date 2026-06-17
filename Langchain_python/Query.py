@@ -1,4 +1,5 @@
 import chromadb
+import json
 from chromadb.utils import embedding_functions
 
 # Écrire question ici !
@@ -7,7 +8,11 @@ from chromadb.utils import embedding_functions
 def search_in_database(ma_question: str):
     # --- CONFIGURATION ---
     # On pointe vers le dossier créé par le premier script
-    DOSSIER_BASE_VECTORIELLE = "./test_base"
+    with open("Config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
+
+        # Extraction des variables de configuration
+    DOSSIER_BASE_VECTORIELLE = config["VectDataBase"]
     # 1. On initialise EXACTEMENT le même moteur de calcul que pour l'ingestion
     embeddings_local = embedding_functions.DefaultEmbeddingFunction()
 

@@ -1,6 +1,6 @@
 import os
 from email.headerregistry import UnstructuredHeader
-
+import json
 from langchain_community.document_loaders import PyPDFLoader, BSHTMLLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
@@ -8,11 +8,15 @@ from langchain_chroma import Chroma
 from chromadb.utils import embedding_functions
 
 # --- CONFIGURATION ---
-DOSSIER_SRC = "./RAG_SANSdata"
+with open("Config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+
+    # Extraction des variables de configuration
+DOSSIER_SRC = config["SrcDataBase"]
 
 # 2. C'est ICI que votre base de données vectorisée va être créée !
 # Ce dossier va apparaître magiquement sur votre ordinateur.
-DOSSIER_BASE_VECTORIELLE = "./test_base"
+DOSSIER_BASE_VECTORIELLE = config["VectDataBase"]
 
 print("1. Initialisation du modèle d'embeddings interne de Chroma...")
 # On utilise le modèle par défaut qui s'installe sans l'infrastructure HuggingFace
