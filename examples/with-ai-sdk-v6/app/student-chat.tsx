@@ -1,10 +1,31 @@
 "use client";
 
 import { Thread } from "@/components/assistant-ui/thread";
-import { AssistantRuntimeProvider, useThread } from "@assistant-ui/react";
+import {
+  AssistantRuntimeProvider,
+  useThread,
+  SuggestionPrimitive,
+  ThreadPrimitive,
+} from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import {
+  MessageCircle,
+  BookOpen,
+  History,
+  User,
+  GraduationCap,
+  Lightbulb,
+  Languages,
+  Brain,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  LogOut,
+  Printer,
+  ChevronDown,
+} from "lucide-react";
 
 // ─── helper: extraire le texte brut d'un message (ThreadMessage ou MongoDB brut) ────
 function extractText(msg: any): string {
@@ -122,6 +143,7 @@ function StudentChatInner({
   activeTab,
   setActiveTab,
   onMessagesChange,
+  onSessionChange,
 }: {
   user: any;
   session: any;
@@ -130,8 +152,12 @@ function StudentChatInner({
   activeTab: string;
   setActiveTab: (tab: any) => void;
   onMessagesChange: (msgs: any[]) => void;
+  onSessionChange: (id: string) => void;
 }) {
-  const [viewingThread, setViewingThread] = useState<any>(null);
+  const [historyOpen, setHistoryOpen] = useState(true);
+  const [profilOpen, setProfilOpen] = useState(true);
+  const [historyWidth, setHistoryWidth] = useState(280);
+  const [profilWidth, setProfilWidth] = useState(320);
   const messages = useThread((t) => t.messages);
 
   useEffect(() => {
@@ -139,9 +165,9 @@ function StudentChatInner({
   }, [messages, onMessagesChange]);
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
-      {/* Sidebar Navigation (Tabs) - Bottom Bar on Mobile, Left Sidebar on Desktop */}
-      <aside className="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center justify-around border-t-4 border-black bg-zinc-900 py-2 md:relative md:h-full md:w-20 md:flex-col md:justify-start md:gap-8 md:border-t-0 md:border-r-4 md:py-8">
+    <div className="flex flex-1 overflow-hidden bg-[#F4F4F5]">
+      {/* 1. Global Navigation Bar (Leftmost) */}
+      <aside className="flex w-22 flex-col items-center gap-10 border-r-[5px] border-black bg-zinc-900 py-10 shadow-[5px_0px_0px_0px_rgba(0,0,0,0.1)]">
         <TabButton
           active={activeTab === "chat"}
           onClick={() => setActiveTab("chat")}
@@ -154,27 +180,174 @@ function StudentChatInner({
           icon="📚"
           label="Docs"
         />
-        <TabButton
-          active={activeTab === "history"}
-          onClick={() => setActiveTab("history")}
-          icon="📜"
-          label="Historique"
-        />
-        <TabButton
-          active={activeTab === "profil"}
-          onClick={() => setActiveTab("profil")}
-          icon="👤"
-          label="Profil"
-        />
       </aside>
 
-      {/* Main Content Area */}
-      <main className="relative flex-1 overflow-hidden bg-white pb-16 md:pb-0">
+      {/* 2. Main Content Area */}
+      <main className="relative flex-1 overflow-hidden">
         {activeTab === "chat" && (
-          <div className="flex h-full flex-col overflow-hidden">
-            <div className="flex-1 overflow-hidden">
-              <Thread />
+          <div className="flex h-full w-full overflow-hidden">
+            {/* Left Sidebar: Historique */}
+            <aside
+              className={`cubic-bezier(0.4, 0, 0.2, 1) relative flex flex-col border-r-[5px] border-black bg-white transition-all duration-500 ${
+                historyOpen ? "" : "w-0 overflow-hidden border-r-0"
+              }`}
+              style={{ width: historyOpen ? historyWidth : 0 }}
+            >
+              <div className="flex h-full w-[280px] flex-col overflow-hidden">
+                <div className="border-b-[5px] border-black bg-[#FFD600] p-5 shadow-sm">
+                  <h2 className="flex items-center gap-2 text-sm font-black tracking-widest text-black uppercase">
+                    <span className="text-lg">📜</span> Historique
+                  </h2>
+                </div>
+                <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-zinc-50/50 p-5">
+                  {(historyThreads || []).map((t: any) => {
+                    const isSelected =
+                      (session?.title || "Discussion libre") === t.topic;
+                    return (
+                      <button
+                        key={t._id}
+                        onClick={() => {
+                          if (t.topic === "Discussion libre") {
+                            onSessionChange("free-discussion");
+                          } else {
+                            const found = user.studentData?.sessionIds?.find(
+                              (s: any) => s.title === t.topic,
+                            );
+                            if (found) onSessionChange(found._id);
+                          }
+                        }}
+                        className={`group w-full rounded-2xl border-[3px] border-black p-4 text-left shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                          isSelected ? "bg-[#FFD600]" : "bg-white"
+                        }`}
+                      >
+                        <h3 className="mb-1 truncate text-[11px] font-black uppercase">
+                          {t.topic}
+                        </h3>
+                        <div className="flex items-center justify-between opacity-70">
+                          <span className="text-[9px] font-bold">
+                            {new Date(t.updatedAt).toLocaleDateString()}
+                          </span>
+                          <span className="text-[9px] font-black uppercase">
+                            {t.messages?.length || 0} msg
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </aside>
+
+            {/* Middle: Chat Frame */}
+            <div className="relative flex flex-1 flex-col overflow-hidden bg-white">
+              {/* History Toggle Button */}
+              <button
+                onClick={() => setHistoryOpen(!historyOpen)}
+                className="absolute top-1/2 left-0 z-40 flex h-14 w-8 -translate-y-1/2 items-center justify-center rounded-r-xl border-[3px] border-l-0 border-black bg-[#FFD600] text-sm font-black shadow-[3px_0px_0px_0px_rgba(0,0,0,1)] transition-all hover:bg-[#FFEB3B] active:scale-95"
+              >
+                {historyOpen ? "◀" : "▶"}
+              </button>
+
+              {/* Profil Toggle Button */}
+              <button
+                onClick={() => setProfilOpen(!profilOpen)}
+                className="absolute top-1/2 right-0 z-40 flex h-14 w-8 -translate-y-1/2 items-center justify-center rounded-l-xl border-[3px] border-r-0 border-black bg-[#FFD600] text-sm font-black shadow-[-3px_0px_0px_0px_rgba(0,0,0,1)] transition-all hover:bg-[#FFEB3B] active:scale-95"
+              >
+                {profilOpen ? "▶" : "◀"}
+              </button>
+
+              <div className="mx-auto flex h-full w-full max-w-4xl flex-col border-x border-zinc-200">
+                <div className="flex-1 overflow-hidden">
+                  <Thread />
+                </div>
+
+                {/* Pedagogical Suggestions Bar */}
+                <div className="flex flex-wrap justify-center gap-2 border-t border-zinc-100 bg-zinc-50/50 p-3">
+                  <SuggestionPill
+                    label="Explique-moi plus simplement"
+                    icon={
+                      <Lightbulb
+                        size={14}
+                        strokeWidth={3}
+                        className="text-yellow-600"
+                      />
+                    }
+                    prompt="Peux-tu m'expliquer cela avec des mots plus simples et des exemples concrets ?"
+                  />
+                  <SuggestionPill
+                    label="Traduis dans ma langue maternelle"
+                    icon={
+                      <Languages
+                        size={14}
+                        strokeWidth={3}
+                        className="text-blue-600"
+                      />
+                    }
+                    prompt="Peux-tu me traduire ce que tu viens de dire dans ma langue maternelle ?"
+                  />
+                  <SuggestionPill
+                    label="Donne-moi un exercice"
+                    icon={
+                      <Brain
+                        size={14}
+                        strokeWidth={3}
+                        className="text-purple-600"
+                      />
+                    }
+                    prompt="Propose-moi un petit exercice pour vérifier que j'ai bien compris."
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Right Sidebar: Profil */}
+            <aside
+              className={`cubic-bezier(0.4, 0, 0.2, 1) relative flex flex-col border-l-[5px] border-black bg-white transition-all duration-500 ${
+                profilOpen ? "" : "w-0 overflow-hidden border-l-0"
+              }`}
+              style={{ width: profilOpen ? profilWidth : 0 }}
+            >
+              <div className="custom-scrollbar flex h-full w-[320px] flex-col overflow-y-auto p-8">
+                <div className="mb-8 rounded-3xl border-[4px] border-black bg-zinc-50 p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  <h2 className="mb-2 text-xs font-black tracking-widest text-zinc-500 uppercase">
+                    👤 Profil Étudiant
+                  </h2>
+                  <div className="text-xl leading-tight font-black text-black uppercase">
+                    {user.studentData?.firstName} {user.studentData?.lastName}
+                  </div>
+                </div>
+
+                <div className="space-y-8">
+                  <div className="rounded-3xl border-[4px] border-black bg-zinc-900 p-6 text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]">
+                    <h3 className="mb-2 text-[10px] font-black tracking-widest text-zinc-400 uppercase">
+                      ID Système
+                    </h3>
+                    <code className="text-2xl font-black tracking-widest text-[#FFD600]">
+                      {user.studentId}
+                    </code>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="rounded-2xl border-[4px] border-black bg-[#E3F2FD] p-4 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                      <div className="mb-1 text-[10px] font-black text-blue-800/60 uppercase">
+                        Français
+                      </div>
+                      <div className="text-2xl font-black text-blue-600">
+                        {user.studentData?.frenchLevel}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border-[4px] border-black bg-[#FFF8E1] p-4 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                      <div className="mb-1 text-[10px] font-black text-amber-800/60 uppercase">
+                        Math
+                      </div>
+                      <div className="text-2xl font-black text-amber-600">
+                        {user.studentData?.mathLevel || "<6ème"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
         )}
 
@@ -222,168 +395,40 @@ function StudentChatInner({
             </div>
           </div>
         )}
-
-        {activeTab === "history" && (
-          <div className="custom-scrollbar h-full overflow-y-auto p-4 md:p-8">
-            <h2 className="mb-8 text-xl font-black tracking-tighter uppercase md:text-3xl">
-              📜 Sessions Passées
-            </h2>
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {(historyThreads || []).map((t: any) => (
-                <div
-                  key={t._id}
-                  className="group relative overflow-hidden rounded-3xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
-                >
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="rounded-full bg-zinc-100 px-3 py-1 text-[10px] font-black uppercase">
-                      {t.subject || "Général"}
-                    </span>
-                    <span className="text-[10px] font-bold text-zinc-400">
-                      {new Date(t.updatedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <h3 className="mb-2 text-xl font-black tracking-tight uppercase">
-                    {t.topic}
-                  </h3>
-                  <p className="mb-6 text-sm font-bold text-zinc-500">
-                    {t.messages?.length || 0} messages échangés
-                  </p>
-                  <button
-                    onClick={() => setViewingThread(t)}
-                    className="w-full rounded-2xl border-4 border-black bg-yellow-400 py-3 font-black uppercase transition-all hover:bg-yellow-500"
-                  >
-                    Voir la discussion
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {viewingThread && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm md:p-12">
-                <div className="flex h-full w-full max-w-4xl flex-col overflow-hidden rounded-3xl border-4 border-black bg-white shadow-2xl">
-                  <div className="flex items-center justify-between border-b-4 border-black bg-zinc-900 p-6 text-white">
-                    <div>
-                      <h3 className="text-xl font-black tracking-tight uppercase">
-                        {viewingThread.topic}
-                      </h3>
-                      <p className="text-xs font-bold text-zinc-400">
-                        {new Date(viewingThread.updatedAt).toLocaleString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setViewingThread(null)}
-                      className="text-3xl hover:text-yellow-400"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <div className="flex-1 overflow-y-auto bg-zinc-50 p-6">
-                    {viewingThread.messages.map((m: any, idx: number) => (
-                      <div
-                        key={idx}
-                        className={`mb-6 flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
-                      >
-                        <div
-                          className={`mb-1 text-[10px] font-black uppercase ${m.role === "user" ? "text-blue-600" : "text-zinc-500"}`}
-                        >
-                          {m.role === "user" ? "Moi" : "IA Assistant"}
-                        </div>
-                        <div
-                          className={`max-w-[85%] rounded-2xl border-4 border-black p-4 font-medium shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ${
-                            m.role === "user" ? "bg-blue-100" : "bg-white"
-                          }`}
-                        >
-                          {extractText(m)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="border-t-4 border-black bg-white p-6">
-                    <button
-                      onClick={() => setViewingThread(null)}
-                      className="w-full rounded-2xl border-4 border-black bg-black py-4 font-black text-white uppercase transition-all hover:bg-zinc-800"
-                    >
-                      Fermer l&apos;aperçu
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === "profil" && (
-          <div className="custom-scrollbar h-full overflow-y-auto p-4 md:p-8">
-            <h2 className="mb-8 text-xl font-black tracking-tighter uppercase md:text-3xl">
-              👤 Mon Profil
-            </h2>
-
-            <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <h3 className="mb-4 text-sm font-black tracking-widest text-zinc-500 uppercase">
-                  Mes Compétences
-                </h3>
-                <div className="space-y-4">
-                  <SkillBar
-                    label="Vocabulaire"
-                    value={user.studentData?.skillsSummary?.vocabulary ?? 0}
-                    color="bg-blue-500"
-                  />
-                  <SkillBar
-                    label="Grammaire"
-                    value={user.studentData?.skillsSummary?.grammar ?? 0}
-                    color="bg-emerald-500"
-                  />
-                  <SkillBar
-                    label="Compréhension"
-                    value={user.studentData?.skillsSummary?.comprehension ?? 0}
-                    color="bg-purple-500"
-                  />
-                  <SkillBar
-                    label="Logique Math"
-                    value={user.studentData?.skillsSummary?.mathLogic ?? 0}
-                    color="bg-orange-500"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="rounded-3xl border-4 border-black bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                  <h3 className="mb-2 text-sm font-black tracking-widest text-zinc-500 uppercase">
-                    Niveaux Actuels
-                  </h3>
-                  <div className="flex gap-3">
-                    <div className="rounded-xl border-2 border-black bg-zinc-100 px-4 py-2 text-center">
-                      <div className="text-[10px] font-black uppercase">FR</div>
-                      <div className="text-lg font-black text-blue-600">
-                        {user.studentData?.frenchLevel}
-                      </div>
-                    </div>
-                    <div className="rounded-xl border-2 border-black bg-zinc-100 px-4 py-2 text-center">
-                      <div className="text-[10px] font-black uppercase">
-                        MATH
-                      </div>
-                      <div className="text-lg font-black text-amber-600">
-                        {user.studentData?.mathLevel || "CP"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-3xl border-4 border-black bg-zinc-900 p-6 text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.5)]">
-                  <h3 className="mb-2 text-sm font-black tracking-widest text-zinc-400 uppercase">
-                    ID Étudiant
-                  </h3>
-                  <code className="text-2xl font-black tracking-widest text-yellow-400">
-                    {user.studentId}
-                  </code>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </div>
+  );
+}
+
+function CompactSkillBar({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase">
+        <span>{label}</span>
+        <span>{value}%</span>
+      </div>
+      <div className="h-2 w-full overflow-hidden rounded-full border-2 border-black bg-zinc-100">
+        <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function SuggestionPill({ label, prompt }: { label: string; prompt: string }) {
+  return (
+    <ThreadPrimitive.Suggestion prompt={prompt} send asChild>
+      <button className="rounded-full border-2 border-black bg-white px-4 py-1.5 text-xs font-black transition-all hover:-translate-y-0.5 hover:bg-[#FFD600] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none">
+        {label}
+      </button>
+    </ThreadPrimitive.Suggestion>
   );
 }
 
@@ -502,7 +547,7 @@ function StudentChatContent({
               content: [{ type: "text", text: extractText(m) }],
             })),
             languageLevel: user.studentData?.frenchLevel ?? "A1",
-            mathLevel: user.studentData?.mathLevel ?? "CP",
+            mathLevel: user.studentData?.mathLevel ?? "<6ème",
             subject: session?.subject ?? "Général",
             topic: session?.title ?? "Discussion libre",
           }),
@@ -696,6 +741,7 @@ function StudentChatContent({
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           onMessagesChange={handleMessagesChange}
+          onSessionChange={setActiveSessionId}
         />
       </div>
     </AssistantRuntimeProvider>

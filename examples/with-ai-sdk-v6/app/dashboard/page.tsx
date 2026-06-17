@@ -9,20 +9,7 @@ import {
 } from "@assistant-ui/react";
 import { useAuth } from "@/lib/auth-context";
 
-const MATH_LEVELS = [
-  "CP",
-  "CE1",
-  "CE2",
-  "CM1",
-  "CM2",
-  "6ème",
-  "5ème",
-  "4ème",
-  "3ème",
-  "2nde",
-  "1ère",
-  "Terminale",
-];
+const MATH_LEVELS = ["<6ème", "6ème", "5ème", "4ème", "3ème", ">3ème"];
 
 // helper: extract plain text from a ThreadMessage or raw MongoDB message
 function extractText(msg: any): string {
@@ -112,20 +99,7 @@ function printStudentList(students: any[]) {
     return;
   }
 
-  const levels = [
-    "CP",
-    "CE1",
-    "CE2",
-    "CM1",
-    "CM2",
-    "6ème",
-    "5ème",
-    "4ème",
-    "3ème",
-    "2nde",
-    "1ère",
-    "Terminale",
-  ];
+  const levels = ["<6ème", "6ème", "5ème", "4ème", "3ème", ">3ème"];
 
   // Sắp xếp học sinh theo trình độ (mathLevel)
   const sorted = [...students].sort((a, b) => {
@@ -147,7 +121,7 @@ function printStudentList(students: any[]) {
     <tr>
       <td style="border:1px solid #ddd;padding:10px;text-align:center">${idx + 1}</td>
       <td style="border:1px solid #ddd;padding:10px"><b>${(s.lastName || "").toUpperCase()}</b> ${s.firstName || ""}</td>
-      <td style="border:1px solid #ddd;padding:10px;text-align:center">${s.mathLevel || "CP"}</td>
+      <td style="border:1px solid #ddd;padding:10px;text-align:center">${s.mathLevel || "<6ème"}</td>
       <td style="border:1px solid #ddd;padding:10px;font-family:monospace;text-align:center">${s.studentId || ""}</td>
     </tr>
   `,
@@ -281,9 +255,9 @@ export default function TeacherDashboard() {
     );
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-white md:flex-row">
+    <div className="flex h-screen flex-col overflow-hidden bg-zinc-50 font-sans text-zinc-900 md:flex-row">
       {/* Sidebar (Bottom Bar on Mobile, Left Sidebar on Desktop) */}
-      <aside className="fixed bottom-0 left-0 z-50 flex w-full border-t border-zinc-800 bg-zinc-900/90 py-2 shadow-2xl backdrop-blur-lg md:relative md:h-full md:w-20 md:flex-col md:items-center md:gap-8 md:border-t-0 md:border-r md:py-8">
+      <aside className="fixed bottom-0 left-0 z-50 flex w-full border-t border-zinc-200 bg-white/90 py-2 shadow-xl backdrop-blur-lg md:relative md:h-full md:w-20 md:flex-col md:items-center md:gap-8 md:border-t-0 md:border-r md:py-8">
         <div className="hidden text-3xl md:block">🛡️</div>
 
         <nav className="flex w-full items-center justify-around md:flex-col md:gap-6">
@@ -307,7 +281,7 @@ export default function TeacherDashboard() {
           />
           <button
             onClick={logout}
-            className="flex flex-col items-center gap-1 text-zinc-600 transition hover:text-white md:mt-auto"
+            className="flex flex-col items-center gap-1 text-zinc-500 transition hover:text-red-500 md:mt-auto"
           >
             <span className="text-2xl">🚪</span>
             <span className="text-[10px] font-black tracking-tighter uppercase md:hidden">
@@ -319,7 +293,7 @@ export default function TeacherDashboard() {
 
       {/* Main Content */}
       <main className="flex flex-1 flex-col overflow-hidden pb-16 md:pb-0">
-        <header className="flex h-16 items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 backdrop-blur-md md:px-8">
+        <header className="flex h-16 items-center justify-between border-b border-zinc-200 bg-white/50 px-4 backdrop-blur-md md:px-8">
           <h1 className="text-sm font-black tracking-widest text-blue-400 uppercase md:text-xl">
             {activeTab === "monitor"
               ? "Monitorage"
@@ -335,17 +309,17 @@ export default function TeacherDashboard() {
         <div className="flex-1 overflow-hidden">
           {activeTab === "monitor" && (
             <div className="flex h-full flex-col md:flex-row">
-              <aside className="custom-scrollbar flex h-1/3 flex-col gap-2 overflow-y-auto border-b border-zinc-800 p-2 md:h-full md:w-64 md:border-r md:border-b-0 md:p-4">
+              <aside className="custom-scrollbar flex h-1/3 flex-col gap-2 overflow-y-auto border-b border-zinc-200 p-2 md:h-full md:w-64 md:border-r md:border-b-0 md:p-4">
                 {(Array.isArray(threads) ? threads : []).map((t) => (
                   <div
                     key={t._id}
                     onClick={() => setSelectedThread(t)}
-                    className={`group/card relative cursor-pointer rounded-xl border p-3 transition-all ${selectedThread?._id === t._id ? "border-blue-400 bg-blue-600/20" : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800"}`}
+                    className={`group/card relative cursor-pointer rounded-xl border p-3 transition-all ${selectedThread?._id === t._id ? "border-blue-400 bg-blue-50" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="overflow-hidden">
                         <div
-                          className={`truncate font-bold tracking-tight uppercase ${selectedThread?._id === t._id ? "text-blue-400" : ""}`}
+                          className={`truncate font-bold tracking-tight uppercase ${selectedThread?._id === t._id ? "text-blue-600" : "text-zinc-800"}`}
                         >
                           {t.studentName}
                         </div>
@@ -372,7 +346,7 @@ export default function TeacherDashboard() {
                             }
                           }
                         }}
-                        className="ml-2 flex-shrink-0 text-zinc-600 opacity-0 transition group-hover/card:opacity-100 hover:text-red-500"
+                        className="ml-2 flex-shrink-0 text-zinc-400 opacity-0 transition group-hover/card:opacity-100 hover:text-red-500"
                         title="Supprimer la discussion"
                       >
                         🗑️
@@ -381,7 +355,7 @@ export default function TeacherDashboard() {
                   </div>
                 ))}
               </aside>
-              <main className="relative flex flex-[3] overflow-hidden">
+              <main className="relative flex flex-[3] overflow-hidden bg-white">
                 <div className="flex flex-1 flex-col overflow-hidden">
                   {selectedThread ? (
                     <ThreadViewer
@@ -389,38 +363,40 @@ export default function TeacherDashboard() {
                       thread={selectedThread}
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center font-bold tracking-widest text-zinc-600 uppercase">
+                    <div className="flex h-full items-center justify-center font-bold tracking-widest text-zinc-400 uppercase">
                       Sélectionnez une discussion
                     </div>
                   )}
                 </div>
               </main>
               {selectedThread && (
-                <aside className="flex max-w-[400px] min-w-[320px] flex-[1.2] flex-col overflow-y-auto border-l border-zinc-800 bg-zinc-900/30 p-6">
-                  <h4 className="mb-6 text-[10px] font-black tracking-widest text-zinc-500 uppercase">
-                    Fiche Élève
-                  </h4>
-                  {(() => {
-                    const student = students.find(
-                      (s: any) => s.studentId === selectedThread.studentId,
-                    );
-                    if (!student)
-                      return (
-                        <div className="text-xs text-zinc-600">
-                          Profil non trouvé
-                        </div>
+                <aside className="custom-scrollbar relative flex h-full max-w-[400px] min-w-[320px] flex-[1.2] flex-col overflow-y-auto border-l border-zinc-200 bg-zinc-50">
+                  <div className="flex-1 p-6 pb-20">
+                    <h4 className="mb-6 text-[10px] font-black tracking-widest text-zinc-500 uppercase">
+                      Fiche Élève
+                    </h4>
+                    {(() => {
+                      const student = students.find(
+                        (s: any) => s.studentId === selectedThread.studentId,
                       );
-                    return (
-                      <StudentCard
-                        student={student}
-                        sessions={sessions}
-                        threads={threads}
-                        onUpdate={updateStudent}
-                        onDelete={() => {}} // No delete from monitor view
-                        isCompact
-                      />
-                    );
-                  })()}
+                      if (!student)
+                        return (
+                          <div className="text-xs text-zinc-600">
+                            Profil non trouvé
+                          </div>
+                        );
+                      return (
+                        <StudentCard
+                          student={student}
+                          sessions={sessions}
+                          threads={threads}
+                          onUpdate={updateStudent}
+                          onDelete={() => {}} // No delete from monitor view
+                          isCompact
+                        />
+                      );
+                    })()}
+                  </div>
                 </aside>
               )}
             </div>
@@ -460,11 +436,16 @@ function StudentCard({
   const [localNativeLanguage, setLocalNativeLanguage] = useState(
     student.nativeLanguage || "",
   );
+  const [showDescription, setShowDescription] = useState(false);
+  const [localDescription, setLocalDescription] = useState(
+    student.description || "",
+  );
 
   // Update local state if prop changes
   useEffect(() => {
     setLocalNativeLanguage(student.nativeLanguage || "");
-  }, [student.nativeLanguage]);
+    setLocalDescription(student.description || "");
+  }, [student.nativeLanguage, student.description]);
 
   const isActive =
     student.lastActive &&
@@ -472,18 +453,25 @@ function StudentCard({
       1000 * 60 * 5; // 5 minutes threshold
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl">
+    <div className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
       <div className="flex items-center justify-end">
-        <div className="font-mono text-[10px] font-bold text-blue-500 opacity-40">
+        <div className="font-mono text-[10px] font-bold text-blue-500 opacity-60">
           ID: {student.studentId}
         </div>
       </div>
 
-      <h3 className="mt-2 mb-1 text-xl font-black uppercase">
+      <h3 className="mt-2 mb-1 text-xl font-black text-zinc-900 uppercase">
         {student.firstName} {student.lastName}
       </h3>
+
+      <button
+        onClick={() => setShowDescription(true)}
+        className="mb-4 flex items-center gap-1 text-xs font-bold text-blue-600 transition-all hover:text-blue-500 hover:underline"
+      >
+        <span>📝</span> Description & Notes
+      </button>
       <div className="mb-4">
-        <span className="text-[10px] font-black tracking-widest text-zinc-600 uppercase">
+        <span className="text-[10px] font-black tracking-widest text-zinc-500 uppercase">
           Sessions assignées :
         </span>
         <div className="mt-1 flex flex-wrap gap-1">
@@ -493,21 +481,21 @@ function StudentCard({
               return sess ? (
                 <div
                   key={sid}
-                  className="rounded bg-blue-600/20 px-2 py-0.5 text-[10px] font-bold text-blue-400"
+                  className="rounded border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600"
                 >
                   {sess.title}
                 </div>
               ) : null;
             })
           ) : (
-            <div className="text-[10px] font-bold text-zinc-500 italic">
+            <div className="text-[10px] font-bold text-zinc-400 italic">
               Aucune session assignée
             </div>
           )}
         </div>
       </div>
 
-      <div className="mb-6 rounded-xl bg-zinc-950/50 p-4 ring-1 ring-zinc-800">
+      <div className="mb-6 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
         <label className="mb-3 block text-[10px] font-black tracking-widest text-zinc-500 uppercase">
           Compétences (AI)
         </label>
@@ -538,7 +526,7 @@ function StudentCard({
       <div className="mb-6 flex flex-wrap gap-2">
         <LevelBadge label="LANG" value={localNativeLanguage} />
         <LevelBadge label="FR" value={student.frenchLevel} />
-        <LevelBadge label="MATH" value={student.mathLevel || "CP"} />
+        <LevelBadge label="MATH" value={student.mathLevel || "<6ème"} />
       </div>
 
       <div className="space-y-4">
@@ -555,7 +543,7 @@ function StudentCard({
               })
             }
             placeholder="Langue maternelle"
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
+            className="w-full rounded-lg border border-zinc-200 bg-white p-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
         <div className="flex gap-2">
@@ -568,7 +556,7 @@ function StudentCard({
               onChange={(e) =>
                 onUpdate(student._id, { frenchLevel: e.target.value })
               }
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
+              className="w-full rounded-lg border border-zinc-200 bg-white p-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               <option value="A1">Niveau A1</option>
               <option value="A2">Niveau A2</option>
@@ -581,11 +569,11 @@ function StudentCard({
               Niveau Math
             </label>
             <select
-              value={student.mathLevel || "CP"}
+              value={student.mathLevel || "<6ème"}
               onChange={(e) =>
                 onUpdate(student._id, { mathLevel: e.target.value })
               }
-              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 p-2 text-sm outline-none"
+              className="w-full rounded-lg border border-zinc-200 bg-white p-2 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
               {MATH_LEVELS.map((level) => (
                 <option key={level} value={level}>
@@ -600,7 +588,7 @@ function StudentCard({
           <label className="mb-3 block text-[10px] font-black text-zinc-500 uppercase">
             Sessions Pédagogiques
           </label>
-          <div className="custom-scrollbar max-h-40 space-y-2 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900/50 p-2 text-sm">
+          <div className="custom-scrollbar max-h-40 space-y-2 overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50 p-2 text-sm">
             {(() => {
               const compatibleSessions = (
                 Array.isArray(sessions) ? sessions : []
@@ -613,7 +601,7 @@ function StudentCard({
 
               if (compatibleSessions.length === 0) {
                 return (
-                  <div className="py-4 text-center text-[10px] font-bold text-zinc-600 uppercase">
+                  <div className="py-4 text-center text-[10px] font-bold text-zinc-400 uppercase">
                     Aucune session compatible
                   </div>
                 );
@@ -627,11 +615,11 @@ function StudentCard({
                 return (
                   <div
                     key={sess._id}
-                    className="flex items-center justify-between gap-2 border-b border-zinc-800 pb-1 last:border-0"
+                    className="flex items-center justify-between gap-2 border-b border-zinc-100 pb-1 last:border-0"
                   >
                     <div className="flex flex-col">
                       <span
-                        className={`font-bold ${isCompatible ? "text-zinc-300" : "text-red-400 italic"}`}
+                        className={`font-bold ${isCompatible ? "text-zinc-800" : "text-red-500 italic"}`}
                       >
                         {sess.title}
                         {!isCompatible && " (Incompatible)"}
@@ -649,8 +637,8 @@ function StudentCard({
                       }}
                       className={`rounded px-2 py-1 text-[9px] font-black uppercase transition-all ${
                         isAssigned
-                          ? "bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white"
-                          : "bg-blue-600/20 text-blue-400 hover:bg-blue-600 hover:text-white"
+                          ? "border border-red-200 bg-red-50 text-red-600 hover:border-red-600 hover:bg-red-600 hover:text-white"
+                          : "border border-blue-200 bg-blue-50 text-blue-600 hover:border-blue-600 hover:bg-blue-600 hover:text-white"
                       }`}
                     >
                       {isAssigned ? "Retirer" : "Ajouter"}
@@ -666,10 +654,47 @@ function StudentCard({
       {!isCompact && (
         <button
           onClick={onDelete}
-          className="mt-6 text-xs font-bold text-red-500 uppercase opacity-0 transition-all group-hover:opacity-100 hover:text-red-400"
+          className="mt-6 text-xs font-bold text-red-500 uppercase opacity-0 transition-all group-hover:opacity-100 hover:text-red-600"
         >
           Supprimer le profil
         </button>
+      )}
+
+      {showDescription && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowDescription(false);
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-4 text-xl font-black text-zinc-900 uppercase">
+              Description
+            </h3>
+            <textarea
+              className="mb-4 h-40 w-full resize-none rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 shadow-sm transition-all outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              value={localDescription}
+              onChange={(e) => setLocalDescription(e.target.value)}
+              onBlur={() =>
+                onUpdate(student._id, { description: localDescription })
+              }
+              placeholder="Ajouter des observations, difficultés, points forts..."
+            />
+            <button
+              onClick={() => {
+                onUpdate(student._id, { description: localDescription });
+                setShowDescription(false);
+              }}
+              className="w-full rounded-xl bg-blue-600 py-3 font-bold text-white shadow-sm transition hover:bg-blue-500"
+            >
+              Fermer et Enregistrer
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -702,9 +727,10 @@ function StudentManager({
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
+    description: "",
     nativeLanguage: "Français",
     frenchLevel: "A1",
-    mathLevel: "CP",
+    mathLevel: "<6ème",
   });
 
   const filteredStudents = (Array.isArray(students) ? students : []).filter(
@@ -730,30 +756,31 @@ function StudentManager({
       setFormData({
         firstName: "",
         lastName: "",
+        description: "",
         nativeLanguage: "Français",
         frenchLevel: "A1",
-        mathLevel: "CP",
+        mathLevel: "<6ème",
       });
       refresh();
     }
   };
 
   return (
-    <div className="custom-scrollbar h-full overflow-y-auto p-4 md:p-8">
+    <div className="custom-scrollbar h-full overflow-y-auto bg-white p-4 md:p-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-xl font-black tracking-tighter uppercase md:text-3xl">
+        <h2 className="text-xl font-black tracking-tighter text-zinc-900 uppercase md:text-3xl">
           Annuaire des élèves
         </h2>
         <div className="flex gap-3">
           <button
             onClick={() => printStudentList(filteredStudents)}
-            className="rounded-xl bg-zinc-800 px-6 py-3 text-sm font-bold tracking-widest uppercase transition-all hover:bg-zinc-700"
+            className="rounded-xl border border-indigo-200 bg-indigo-50 px-6 py-3 text-sm font-bold tracking-widest text-indigo-600 uppercase transition-all hover:bg-indigo-100"
           >
             📄 EXPORTER PDF
           </button>
           <button
             onClick={() => setShowAdd(true)}
-            className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold tracking-widest uppercase transition-all hover:bg-blue-500"
+            className="rounded-xl bg-blue-500 px-6 py-3 text-sm font-bold tracking-widest text-white uppercase shadow-sm transition-all hover:bg-blue-600"
           >
             + Ajouter un élève
           </button>
@@ -770,7 +797,7 @@ function StudentManager({
             placeholder="Rechercher par nom ou ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/50 py-3 pr-4 pl-12 text-sm text-white transition-all outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-2xl border border-zinc-200 bg-white py-3 pr-4 pl-12 text-sm text-zinc-900 shadow-sm transition-all outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           />
         </div>
         <div className="flex items-center gap-3">
@@ -780,7 +807,7 @@ function StudentManager({
           <select
             value={levelFilter}
             onChange={(e) => setLevelFilter(e.target.value)}
-            className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-white transition-all outline-none focus:border-blue-500"
+            className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all outline-none focus:border-blue-500"
           >
             <option value="all">Toutes les classes</option>
             {MATH_LEVELS.map((level) => (
@@ -815,8 +842,8 @@ function StudentManager({
       </div>
 
       {filteredStudents.length === 0 && (
-        <div className="flex h-64 flex-col items-center justify-center rounded-3xl border-2 border-dashed border-zinc-800 text-zinc-500">
-          <div className="text-4xl opacity-20">👤</div>
+        <div className="flex h-64 flex-col items-center justify-center rounded-3xl border-2 border-dashed border-zinc-200 bg-zinc-50 text-zinc-500">
+          <div className="text-4xl opacity-50">👤</div>
           <p className="mt-4 font-bold tracking-widest uppercase">
             Aucun élève trouvé
           </p>
@@ -824,13 +851,15 @@ function StudentManager({
       )}
 
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
-            <h3 className="mb-6 text-2xl font-black uppercase">Nouvel Élève</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl">
+            <h3 className="mb-6 text-2xl font-black text-zinc-900 uppercase">
+              Nouvel Élève
+            </h3>
             <form onSubmit={addStudent} className="space-y-4">
               <input
                 placeholder="Prénom"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 p-4 outline-none"
+                className="w-full rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={formData.firstName}
                 onChange={(e) =>
                   setFormData({ ...formData, firstName: e.target.value })
@@ -839,16 +868,24 @@ function StudentManager({
               />
               <input
                 placeholder="Nom"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 p-4 outline-none"
+                className="w-full rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={formData.lastName}
                 onChange={(e) =>
                   setFormData({ ...formData, lastName: e.target.value })
                 }
                 required
               />
+              <textarea
+                placeholder="Notes ou description de l'élève (optionnel)"
+                className="h-24 w-full resize-none rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+              />
               <input
                 placeholder="Langue Maternelle"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 p-4 text-white outline-none"
+                className="w-full rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 value={formData.nativeLanguage}
                 onChange={(e) =>
                   setFormData({ ...formData, nativeLanguage: e.target.value })
@@ -858,7 +895,7 @@ function StudentManager({
 
               <div className="flex gap-2">
                 <select
-                  className="flex-1 rounded-xl border border-zinc-700 bg-zinc-800 p-4 text-sm text-white outline-none"
+                  className="flex-1 rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   value={formData.frenchLevel}
                   onChange={(e) =>
                     setFormData({ ...formData, frenchLevel: e.target.value })
@@ -871,7 +908,7 @@ function StudentManager({
                 </select>
 
                 <select
-                  className="flex-1 rounded-xl border border-zinc-700 bg-zinc-800 p-4 text-sm text-white outline-none"
+                  className="flex-1 rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   value={formData.mathLevel}
                   onChange={(e) =>
                     setFormData({ ...formData, mathLevel: e.target.value })
@@ -918,7 +955,7 @@ function SessionManager({ students, sessions, refresh }: any) {
     title: "",
     objective: "",
     subject: "Mathématiques",
-    mathLevel: "CP",
+    mathLevel: "<6ème",
     documents: [] as { name: string; url: string }[],
   });
 
@@ -940,7 +977,7 @@ function SessionManager({ students, sessions, refresh }: any) {
         title: editingSession.title,
         objective: editingSession.objective,
         subject: editingSession.subject,
-        mathLevel: editingSession.mathLevel || "CP",
+        mathLevel: editingSession.mathLevel || "<6ème",
         documents: editingSession.documents || [],
       });
       setShowAdd(true);
@@ -949,7 +986,7 @@ function SessionManager({ students, sessions, refresh }: any) {
         title: "",
         objective: "",
         subject: "Mathématiques",
-        mathLevel: "CP",
+        mathLevel: "<6ème",
         documents: [],
       });
     }
@@ -1026,17 +1063,19 @@ function SessionManager({ students, sessions, refresh }: any) {
         <h2 className="text-xl font-black tracking-tighter uppercase md:text-3xl">
           Catalogue des Sessions
         </h2>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold tracking-widest uppercase transition-all hover:bg-emerald-500"
-        >
-          + Créer une session
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowAdd(true)}
+            className="rounded-xl bg-emerald-500 px-6 py-3 text-sm font-bold tracking-widest text-white uppercase shadow-sm transition-all hover:bg-emerald-600"
+          >
+            + Créer une session
+          </button>
+        </div>
       </div>
 
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <span className="absolute inset-y-0 left-4 flex items-center text-zinc-500">
+          <span className="absolute inset-y-0 left-4 flex items-center text-zinc-400">
             🔍
           </span>
           <input
@@ -1044,7 +1083,7 @@ function SessionManager({ students, sessions, refresh }: any) {
             placeholder="Rechercher une session..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-2xl border border-zinc-800 bg-zinc-900/50 py-3 pr-4 pl-12 text-sm text-white transition-all outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            className="w-full rounded-2xl border border-zinc-200 bg-white py-3 pr-4 pl-12 text-sm text-zinc-900 shadow-sm transition-all outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           />
         </div>
         <div className="flex items-center gap-3">
@@ -1054,16 +1093,16 @@ function SessionManager({ students, sessions, refresh }: any) {
           <select
             value={levelFilter}
             onChange={(e) => setLevelFilter(e.target.value)}
-            className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-3 text-sm text-white transition-all outline-none focus:border-emerald-500"
+            className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm transition-all outline-none focus:border-emerald-500"
           >
-            <option value="all">Tous các niveaux</option>
+            <option value="all">Tous les niveaux</option>
             {MATH_LEVELS.map((level) => (
               <option key={level} value={level}>
                 {level}
               </option>
             ))}
           </select>
-          <div className="text-xs font-bold text-zinc-600 uppercase">
+          <div className="text-xs font-bold text-zinc-500 uppercase">
             {filteredSessions.length}{" "}
             {filteredSessions.length > 1 ? "sessions" : "session"}
           </div>
@@ -1074,15 +1113,15 @@ function SessionManager({ students, sessions, refresh }: any) {
         {filteredSessions.map((s: any) => (
           <div
             key={s._id}
-            className="group rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-xl"
+            className="group rounded-2xl border border-zinc-200 bg-white p-6 shadow-md transition-shadow hover:shadow-lg"
           >
             <div className="mb-4 flex items-start justify-between">
               <div className="flex gap-2">
-                <span className="rounded-full border border-emerald-900/30 bg-zinc-800 px-3 py-1 text-[10px] font-black text-emerald-400 uppercase">
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-black text-emerald-600 uppercase">
                   {s.subject}
                 </span>
                 {s.mathLevel && (
-                  <span className="rounded-full border border-amber-900/30 bg-zinc-800 px-3 py-1 text-[10px] font-black text-amber-400 uppercase">
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[10px] font-black text-amber-600 uppercase">
                     {s.mathLevel}
                   </span>
                 )}
@@ -1090,7 +1129,7 @@ function SessionManager({ students, sessions, refresh }: any) {
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditingSession(s)}
-                  className="text-zinc-600 transition hover:text-blue-400"
+                  className="text-zinc-400 transition hover:text-blue-500"
                   title="Modifier la session"
                 >
                   ✏️
@@ -1104,23 +1143,23 @@ function SessionManager({ students, sessions, refresh }: any) {
                       refresh();
                     }
                   }}
-                  className="text-zinc-600 transition hover:text-red-500"
+                  className="text-zinc-400 transition hover:text-red-500"
                   title="Supprimer la session"
                 >
                   🗑️
                 </button>
               </div>
             </div>
-            <h3 className="mb-2 text-2xl font-black tracking-tight uppercase">
+            <h3 className="mb-2 text-2xl font-black tracking-tight text-zinc-900 uppercase">
               {s.title}
             </h3>
-            <p className="mb-4 text-sm leading-relaxed text-zinc-400">
+            <p className="mb-4 text-sm leading-relaxed text-zinc-500">
               {s.objective}
             </p>
 
             {s.documents && s.documents.length > 0 && (
               <div className="mb-4">
-                <label className="mb-1 block text-[10px] font-black text-zinc-600 uppercase">
+                <label className="mb-1 block text-[10px] font-black text-zinc-400 uppercase">
                   Documents
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -1130,7 +1169,7 @@ function SessionManager({ students, sessions, refresh }: any) {
                       href={doc.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded bg-zinc-800 px-2 py-1 text-[10px] text-blue-400 hover:underline"
+                      className="rounded border border-zinc-200 bg-zinc-100 px-2 py-1 text-[10px] text-blue-600 hover:bg-blue-50 hover:underline"
                     >
                       📄 {doc.name}
                     </a>
@@ -1141,12 +1180,12 @@ function SessionManager({ students, sessions, refresh }: any) {
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <div className="text-[10px] font-bold tracking-widest text-zinc-600 uppercase">
+                <div className="text-[10px] font-bold tracking-widest text-zinc-400 uppercase">
                   Créé le {new Date(s.createdAt).toLocaleDateString()}
                 </div>
                 <button
                   onClick={() => setShowStudentList(s._id)}
-                  className="w-fit text-[10px] font-black text-blue-500 uppercase transition-all hover:text-blue-400 hover:underline"
+                  className="w-fit text-[10px] font-black text-blue-600 uppercase transition-all hover:text-blue-500 hover:underline"
                 >
                   👥{" "}
                   {
@@ -1158,7 +1197,7 @@ function SessionManager({ students, sessions, refresh }: any) {
               </div>
               <button
                 onClick={() => setShowAssign(s._id)}
-                className="rounded-lg bg-blue-600/20 px-3 py-1 text-[10px] font-bold text-blue-400 transition hover:bg-blue-600 hover:text-white"
+                className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-bold text-blue-600 transition hover:bg-blue-600 hover:text-white"
               >
                 👥 Assigner des élèves
               </button>
@@ -1294,7 +1333,7 @@ function SessionManager({ students, sessions, refresh }: any) {
                           <div
                             className={`rounded px-1.5 py-0.5 text-[9px] font-black ${!isLevelCompatible ? "bg-red-900/40 text-red-300" : "bg-zinc-700 text-amber-400"}`}
                           >
-                            {st.mathLevel || "CP"}
+                            {st.mathLevel || "<6ème"}
                           </div>
                         </div>
                       </div>
@@ -1329,15 +1368,15 @@ function SessionManager({ students, sessions, refresh }: any) {
       )}
 
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
-            <h3 className="mb-6 text-2xl font-black uppercase">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl">
+            <h3 className="mb-6 text-2xl font-black text-zinc-900 uppercase">
               {editingSession ? "Modifier la Session" : "Nouvelle Session"}
             </h3>
             <form onSubmit={addSession} className="space-y-4">
               <input
                 placeholder="Titre de la session (ex: Les Fractions)"
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 p-4 outline-none"
+                className="w-full rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({ ...formData, title: e.target.value })
@@ -1346,7 +1385,7 @@ function SessionManager({ students, sessions, refresh }: any) {
               />
               <textarea
                 placeholder="Objectif pédagogique pour l'IA (ex: Guide l'élève à travers la multiplication des fractions...)"
-                className="h-32 w-full resize-none rounded-xl border border-zinc-700 bg-zinc-800 p-4 outline-none"
+                className="h-32 w-full resize-none rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 value={formData.objective}
                 onChange={(e) =>
                   setFormData({ ...formData, objective: e.target.value })
@@ -1354,7 +1393,7 @@ function SessionManager({ students, sessions, refresh }: any) {
                 required
               />
               <select
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 p-4 outline-none"
+                className="w-full rounded-xl border border-zinc-200 bg-white p-4 text-zinc-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 value={formData.subject}
                 onChange={(e) =>
                   setFormData({ ...formData, subject: e.target.value })
@@ -1366,7 +1405,7 @@ function SessionManager({ students, sessions, refresh }: any) {
               </select>
 
               <select
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 p-4 text-sm text-white outline-none"
+                className="w-full rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
                 value={formData.mathLevel}
                 onChange={(e) =>
                   setFormData({ ...formData, mathLevel: e.target.value })
@@ -1470,10 +1509,21 @@ function SessionManager({ students, sessions, refresh }: any) {
 }
 
 function LevelBadge({ label, value }: { label: string; value: string }) {
+  let colorStyles = "border-zinc-200 bg-zinc-50 text-zinc-900";
+  if (label === "LANG")
+    colorStyles = "border-emerald-200 bg-emerald-50 text-emerald-700";
+  if (label === "FR") colorStyles = "border-blue-200 bg-blue-50 text-blue-700";
+  if (label === "MATH")
+    colorStyles = "border-amber-200 bg-amber-50 text-amber-700";
+
   return (
-    <div className="flex items-center gap-1.5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1">
-      <span className="text-[10px] font-black text-zinc-500">{label}:</span>
-      <span className="text-xs font-bold text-blue-400">{value}</span>
+    <div
+      className={`flex items-center gap-1.5 rounded-lg border px-3 py-1 shadow-sm ${colorStyles}`}
+    >
+      <span className="text-[10px] font-black uppercase opacity-70">
+        {label}:
+      </span>
+      <span className="text-xs font-bold">{value}</span>
     </div>
   );
 }
@@ -1482,10 +1532,10 @@ function SkillBar({ label, value, color }: any) {
   return (
     <div>
       <div className="mb-1 flex justify-between text-[9px] font-bold uppercase">
-        <span className="text-zinc-400">{label}</span>
-        <span className="text-white">{value}%</span>
+        <span className="text-zinc-500">{label}</span>
+        <span className="text-zinc-900">{value}%</span>
       </div>
-      <div className="h-1 w-full overflow-hidden rounded-full bg-zinc-800">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
         <div
           className={`h-full ${color} transition-all duration-500`}
           style={{ width: `${value}%` }}
@@ -1512,22 +1562,23 @@ function ThreadViewerInner({ thread }: { thread: any }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/40 p-4">
-        <div className="text-sm font-bold text-zinc-400">
-          Discussion de {thread.studentName}
-          <span className="ml-2 text-xs text-zinc-600">
+      <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 p-4">
+        <div className="text-sm font-bold text-zinc-600">
+          Discussion de{" "}
+          <span className="text-zinc-900">{thread.studentName}</span>
+          <span className="ml-2 text-xs text-zinc-500">
             ({liveMessages.length} message{liveMessages.length !== 1 ? "s" : ""}
             )
           </span>
         </div>
         <button
           onClick={handlePrint}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold tracking-wider text-white uppercase transition-all hover:bg-blue-500"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold tracking-wider text-white uppercase shadow-sm transition-all hover:bg-blue-500"
         >
           📄 Imprimer / PDF
         </button>
       </div>
-      <div className="relative flex-1">
+      <div className="relative flex-1 bg-white">
         <Thread />
       </div>
     </div>

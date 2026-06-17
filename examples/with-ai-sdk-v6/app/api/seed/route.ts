@@ -1,17 +1,65 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import { Thread } from "@/models/Thread";
+import { Student } from "@/models/Student";
+import { Session } from "@/models/Session";
 
 export async function GET() {
   try {
     await dbConnect();
 
-    // Clear existing data (optional)
+    // Clear existing data
     await Thread.deleteMany({});
+    await Student.deleteMany({});
+    await Session.deleteMany({});
 
-    // Seed French Student Data
-    const seedData = [
+    // 1. Create Sample Sessions
+    const sessions = await Session.insertMany([
       {
+        title: "Calcul mental : Addition",
+        objective:
+          "Aider l'élève à maîtriser les additions simples sans retenue.",
+        subject: "Mathématiques",
+        mathLevel: "<6ème",
+        createdBy: "TEACHER_ADMIN",
+      },
+      {
+        title: "Introduction à la Physique",
+        objective: "Expliquer les concepts de base du mouvement.",
+        subject: "Physique",
+        mathLevel: "3ème",
+        createdBy: "TEACHER_ADMIN",
+      },
+    ]);
+
+    // 2. Create Sample Students
+    const studentData = [
+      {
+        studentId: "JEAN_DUPONT",
+        firstName: "Jean",
+        lastName: "Dupont",
+        nativeLanguage: "Français",
+        frenchLevel: "A1",
+        mathLevel: "<6ème",
+        sessionIds: [sessions[0]._id],
+      },
+      {
+        studentId: "MARIE_CURIE",
+        firstName: "Marie",
+        lastName: "Curie",
+        nativeLanguage: "Polonais",
+        frenchLevel: "B1",
+        mathLevel: "3ème",
+        sessionIds: [sessions[1]._id],
+      },
+    ];
+
+    const students = await Student.insertMany(studentData);
+
+    // 3. Create Sample Threads (Chat Histories)
+    const seedThreads = [
+      {
+        studentId: "JEAN_DUPONT",
         studentName: "Jean Dupont",
         languageLevel: "A1",
         subject: "Mathématiques",
@@ -38,6 +86,7 @@ export async function GET() {
         ],
       },
       {
+        studentId: "MARIE_CURIE",
         studentName: "Marie Curie",
         languageLevel: "B1",
         subject: "Physique",
@@ -63,40 +112,22 @@ export async function GET() {
           },
         ],
       },
-      {
-        studentName: "Ahmed Al-Farsi",
-        languageLevel: "A2",
-        subject: "Mathématiques",
-        topic: "Théorème de Pythagore",
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: "C'est quoi un triangle rectangle ?" },
-            ],
-          },
-          {
-            role: "assistant",
-            content: [
-              {
-                type: "text",
-                text: "Un triangle rectangle est un triangle qui possède un angle droit (90 degrés).",
-              },
-            ],
-          },
-        ],
-      },
     ];
 
-    await Thread.insertMany(seedData);
+    await Thread.insertMany(seedThreads);
 
     return NextResponse.json({
-      message: "Database seeded successfully with French student data!",
+      message:
+        "Database seeded successfully with Student, Session, and Thread data!",
+      seededStudents: students.map((s) => s.studentId),
     });
   } catch (error) {
-    console.error(error);
+    console.error("Seed error:", error);
     return NextResponse.json(
-      { error: "Failed to seed database" },
+      {
+        error: "Failed to seed database",
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 },
     );
   }
