@@ -5,7 +5,7 @@ Langchain_python/.idea
 Langchain_python/PDF_RAG
 Langchain_python/__pycache__
 Langchain_python/RAG_SANSdata
-
+qwen_js/.idea
 *.pyc
 *.bin
 
