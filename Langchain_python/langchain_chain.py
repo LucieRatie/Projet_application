@@ -18,12 +18,12 @@ def get_model(is_online, temperature):
         )
     else :
         print("🦙 Initialisation de Ollama/Llama3 (Local)...")
-        from langchain_community.llms import Ollama
-        model = Ollama(
-            model="llama3",
+        from langchain_ollama import OllamaLLM
+        model = OllamaLLM(
+            model="qwen-no-think",
             temperature=temperature,
-            maxRetries=3,
-            baseUrl="http://localhost:11434",
+            max_retries=3,
+            base_url="http://localhost:11434"
         )
     return model
 
@@ -52,14 +52,16 @@ def main(question_eleve):
     chain1 = prompt_template1 | model
 
 
-    print("question_eleve", question_eleve)
+    #print("question_eleve", question_eleve)
     print("Envoi de la requête à Gemini pour reformulation...\n")
     prompt = chain1.invoke({"question": question_eleve})
-    print("prompt",prompt)
+    if is_online :
+        prompt=prompt.content
+    #print("prompt",prompt)
 
     # 5.1 Préparation des données pour le 2e propt
-    context_db = search_in_database(prompt.content) #Query.py
-    print("context_db", context_db)
+    context_db = search_in_database(prompt) #Query.py
+    #print("context_db", context_db)
 
     prompt_config2 = config["prompts"]["Reponse"]
     prompt_template2 = ChatPromptTemplate.from_messages([
@@ -74,9 +76,10 @@ def main(question_eleve):
     print("Envoi de la demande à Gemini...\n")
     response = chain2.invoke({"documents": context_db, "question": question_eleve})
 
+
     print(response.content)
 
 #Prochainement JS navigateur
-question_eleve="Quel est la relation historique entre les canaries et l'espagne";
+question_eleve="Quel est la relation historique entre les canaries et l'espagne"
 
 main(question_eleve)
