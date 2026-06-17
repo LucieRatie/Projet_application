@@ -15,6 +15,7 @@ export async function POST(req: Request) {
       mathLevel,
       subject,
       topic,
+      sessionId,
     } = body;
 
     if (!studentId) {
@@ -36,9 +37,11 @@ export async function POST(req: Request) {
       {},
     );
 
-    // Find or create a thread for this student ID and topic (to keep history separate)
+    // Find or create the thread for this student's session (keyed by sessionId,
+    // not topic title, so renaming/duplicate session titles can't collide threads
+    // and switching sessions never overwrites another session's history).
     const thread = await (Thread as any).findOneAndUpdate(
-      { studentId, topic: topic || "Discussion libre" },
+      { studentId, sessionId: sessionId || "free-discussion" },
       {
         studentName,
         messages,
@@ -46,6 +49,7 @@ export async function POST(req: Request) {
         languageLevel: languageLevel || "A1",
         mathLevel: mathLevel || "CP",
         subject: subject || "Mathématiques",
+        topic: topic || "Discussion libre",
       },
       { upsert: true, new: true, setDefaultsOnInsert: true },
     );

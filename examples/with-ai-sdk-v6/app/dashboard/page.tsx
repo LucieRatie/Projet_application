@@ -199,6 +199,7 @@ export default function TeacherDashboard() {
     "monitor" | "students" | "sessions"
   >("monitor");
   const [selectedThread, setSelectedThread] = useState<any>(null);
+  const [monitorSessionFilter, setMonitorSessionFilter] = useState("all");
   const [threads, setThreads] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -327,50 +328,72 @@ export default function TeacherDashboard() {
           {activeTab === "monitor" && (
             <div className="flex h-full flex-col md:flex-row">
               <aside className="custom-scrollbar flex h-1/3 flex-col gap-2 overflow-y-auto border-b border-zinc-200 p-2 md:h-full md:w-64 md:border-r md:border-b-0 md:p-4">
-                {(Array.isArray(threads) ? threads : []).map((t) => (
-                  <div
-                    key={t._id}
-                    onClick={() => setSelectedThread(t)}
-                    className={`group/card relative cursor-pointer rounded-xl border p-3 transition-all ${selectedThread?._id === t._id ? "border-blue-400 bg-blue-50" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="overflow-hidden">
-                        <div
-                          className={`truncate font-bold tracking-tight uppercase ${selectedThread?._id === t._id ? "text-blue-600" : "text-zinc-800"}`}
-                        >
-                          {t.studentName}
+                <select
+                  value={monitorSessionFilter}
+                  onChange={(e) => {
+                    setMonitorSessionFilter(e.target.value);
+                    setSelectedThread(null);
+                  }}
+                  className="mb-2 w-full rounded-lg border border-zinc-200 bg-white p-2 text-xs font-bold text-zinc-700 outline-none focus:border-blue-500"
+                >
+                  <option value="all">Toutes les sessions</option>
+                  <option value="free-discussion">Discussion libre</option>
+                  {(Array.isArray(sessions) ? sessions : []).map((s: any) => (
+                    <option key={s._id} value={s._id}>
+                      {s.title}
+                    </option>
+                  ))}
+                </select>
+                {(Array.isArray(threads) ? threads : [])
+                  .filter(
+                    (t) =>
+                      monitorSessionFilter === "all" ||
+                      t.sessionId === monitorSessionFilter,
+                  )
+                  .map((t) => (
+                    <div
+                      key={t._id}
+                      onClick={() => setSelectedThread(t)}
+                      className={`group/card relative cursor-pointer rounded-xl border p-3 transition-all ${selectedThread?._id === t._id ? "border-blue-400 bg-blue-50" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="overflow-hidden">
+                          <div
+                            className={`truncate font-bold tracking-tight uppercase ${selectedThread?._id === t._id ? "text-blue-600" : "text-zinc-800"}`}
+                          >
+                            {t.studentName}
+                          </div>
+                          <div className="mt-1 truncate text-[10px] font-bold text-zinc-500">
+                            {t.topic || "Discussion"}
+                          </div>
                         </div>
-                        <div className="mt-1 truncate text-[10px] font-bold text-zinc-500">
-                          {t.topic || "Discussion"}
-                        </div>
-                      </div>
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (
-                            confirm(
-                              `Supprimer l'historique de ${t.studentName} ?`,
-                            )
-                          ) {
-                            const res = await fetch(`/api/threads/${t._id}`, {
-                              method: "DELETE",
-                            });
-                            if (res.ok) {
-                              if (selectedThread?._id === t._id) {
-                                setSelectedThread(null);
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (
+                              confirm(
+                                `Supprimer l'historique de ${t.studentName} ?`,
+                              )
+                            ) {
+                              const res = await fetch(`/api/threads/${t._id}`, {
+                                method: "DELETE",
+                              });
+                              if (res.ok) {
+                                if (selectedThread?._id === t._id) {
+                                  setSelectedThread(null);
+                                }
+                                fetchData(true);
                               }
-                              fetchData(true);
                             }
-                          }
-                        }}
-                        className="ml-2 flex-shrink-0 text-zinc-400 opacity-0 transition group-hover/card:opacity-100 hover:text-red-500"
-                        title="Supprimer la discussion"
-                      >
-                        🗑️
-                      </button>
+                          }}
+                          className="ml-2 flex-shrink-0 text-zinc-400 opacity-0 transition group-hover/card:opacity-100 hover:text-red-500"
+                          title="Supprimer la discussion"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
               </aside>
               <main className="relative flex flex-[3] overflow-hidden bg-white">
                 <div className="flex flex-1 flex-col overflow-hidden">
@@ -378,6 +401,9 @@ export default function TeacherDashboard() {
                     <ThreadViewer
                       key={`${selectedThread._id}-${selectedThread.messages?.length ?? 0}-${selectedThread.updatedAt || ""}`}
                       thread={selectedThread}
+                      students={students}
+                      sessions={sessions}
+                      onAssign={updateStudent}
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center font-bold tracking-widest text-zinc-400 uppercase">
@@ -457,12 +483,30 @@ function StudentCard({
   const [localDescription, setLocalDescription] = useState(
     student.description || "",
   );
+  const [localSkills, setLocalSkills] = useState({
+    vocabulary: student.skillsSummary?.vocabulary ?? 0,
+    grammar: student.skillsSummary?.grammar ?? 0,
+    comprehension: student.skillsSummary?.comprehension ?? 0,
+    mathLogic: student.skillsSummary?.mathLogic ?? 0,
+  });
 
   // Update local state if prop changes
   useEffect(() => {
     setLocalNativeLanguage(student.nativeLanguage || "");
     setLocalDescription(student.description || "");
-  }, [student.nativeLanguage, student.description]);
+    setLocalSkills({
+      vocabulary: student.skillsSummary?.vocabulary ?? 0,
+      grammar: student.skillsSummary?.grammar ?? 0,
+      comprehension: student.skillsSummary?.comprehension ?? 0,
+      mathLogic: student.skillsSummary?.mathLogic ?? 0,
+    });
+  }, [student.nativeLanguage, student.description, student.skillsSummary]);
+
+  const commitSkill = (key: string, value: number) => {
+    const updated = { ...localSkills, [key]: value };
+    setLocalSkills(updated);
+    onUpdate(student._id, { skillsSummary: updated });
+  };
 
   const isActive =
     student.lastActive &&
@@ -514,28 +558,42 @@ function StudentCard({
 
       <div className="mb-6 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
         <label className="mb-3 block text-[10px] font-black tracking-widest text-zinc-500 uppercase">
-          Compétences (AI)
+          Évaluation des compétences
         </label>
         <div className="space-y-3">
-          <SkillBar
+          <SkillSlider
             label="Vocabulaire"
-            value={student.skillsSummary?.vocabulary ?? 0}
-            color="bg-blue-500"
+            value={localSkills.vocabulary}
+            color="accent-blue-500"
+            onChange={(v) =>
+              setLocalSkills((s: any) => ({ ...s, vocabulary: v }))
+            }
+            onCommit={(v) => commitSkill("vocabulary", v)}
           />
-          <SkillBar
+          <SkillSlider
             label="Grammaire"
-            value={student.skillsSummary?.grammar ?? 0}
-            color="bg-purple-500"
+            value={localSkills.grammar}
+            color="accent-purple-500"
+            onChange={(v) => setLocalSkills((s: any) => ({ ...s, grammar: v }))}
+            onCommit={(v) => commitSkill("grammar", v)}
           />
-          <SkillBar
+          <SkillSlider
             label="Compréhension"
-            value={student.skillsSummary?.comprehension ?? 0}
-            color="bg-emerald-500"
+            value={localSkills.comprehension}
+            color="accent-emerald-500"
+            onChange={(v) =>
+              setLocalSkills((s: any) => ({ ...s, comprehension: v }))
+            }
+            onCommit={(v) => commitSkill("comprehension", v)}
           />
-          <SkillBar
+          <SkillSlider
             label="Logique Math"
-            value={student.skillsSummary?.mathLogic ?? 0}
-            color="bg-amber-500"
+            value={localSkills.mathLogic}
+            color="accent-amber-500"
+            onChange={(v) =>
+              setLocalSkills((s: any) => ({ ...s, mathLogic: v }))
+            }
+            onCommit={(v) => commitSkill("mathLogic", v)}
           />
         </div>
       </div>
@@ -1551,27 +1609,75 @@ function LevelBadge({ label, value }: { label: string; value: string }) {
   );
 }
 
-function SkillBar({ label, value, color }: any) {
+function SkillSlider({
+  label,
+  value,
+  color,
+  onChange,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  onChange: (v: number) => void;
+  onCommit: (v: number) => void;
+}) {
   return (
     <div>
       <div className="mb-1 flex justify-between text-[9px] font-bold uppercase">
         <span className="text-zinc-500">{label}</span>
         <span className="text-zinc-900">{value}%</span>
       </div>
-      <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
-        <div
-          className={`h-full ${color} transition-all duration-500`}
-          style={{ width: `${value}%` }}
-        />
-      </div>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={5}
+        value={value}
+        className={`h-1.5 w-full cursor-pointer ${color}`}
+        onChange={(e) => onChange(Number(e.target.value))}
+        onMouseUp={(e) =>
+          onCommit(Number((e.target as HTMLInputElement).value))
+        }
+        onTouchEnd={(e) =>
+          onCommit(Number((e.target as HTMLInputElement).value))
+        }
+        onKeyUp={(e) => onCommit(Number((e.target as HTMLInputElement).value))}
+      />
     </div>
   );
 }
 
 // Inner component for ThreadViewer – must be INSIDE AssistantRuntimeProvider
-function ThreadViewerInner({ thread }: { thread: any }) {
+function ThreadViewerInner({
+  thread,
+  students,
+  sessions,
+  onAssign,
+}: {
+  thread: any;
+  students: any[];
+  sessions: any[];
+  onAssign: (id: string, data: any) => Promise<void>;
+}) {
   // useThread runs inside AssistantRuntimeProvider — correct context
   const liveMessages = useThread((t) => t.messages);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [showAssignSession, setShowAssignSession] = useState(false);
+  const [assignSessionId, setAssignSessionId] = useState("");
+
+  const student = students.find((s: any) => s.studentId === thread.studentId);
+
+  const handleAssignSession = async () => {
+    if (!student || !assignSessionId) return;
+    await onAssign(student._id, {
+      action: "addSession",
+      sessionId: assignSessionId,
+    });
+    setShowAssignSession(false);
+    setAssignSessionId("");
+  };
 
   const handlePrint = () => {
     printPDF(liveMessages as any[], {
@@ -1581,6 +1687,26 @@ function ThreadViewerInner({ thread }: { thread: any }) {
       level: thread.languageLevel ?? "A1",
       mathLevel: thread.mathLevel,
     });
+  };
+
+  const handleSummarize = async () => {
+    setIsSummarizing(true);
+    try {
+      const res = await fetch(`/api/summary/${thread._id}`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      setSummary(
+        data.summary ??
+          [data.error, data.details].filter(Boolean).join(" : ") ??
+          "Erreur lors de la génération du rapport.",
+      );
+    } catch (err) {
+      console.error(err);
+      setSummary("Erreur lors de la génération du rapport.");
+    } finally {
+      setIsSummarizing(false);
+    }
   };
 
   return (
@@ -1593,22 +1719,133 @@ function ThreadViewerInner({ thread }: { thread: any }) {
             ({liveMessages.length} message{liveMessages.length !== 1 ? "s" : ""}
             )
           </span>
+          <span
+            className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-black uppercase ${
+              thread.status === "completed"
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            {thread.status === "completed" ? "Terminée" : "En cours"}
+          </span>
         </div>
-        <button
-          onClick={handlePrint}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold tracking-wider text-white uppercase shadow-sm transition-all hover:bg-blue-500"
-        >
-          📄 Imprimer / PDF
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowAssignSession(true)}
+            disabled={!student}
+            title={!student ? "Profil élève introuvable" : ""}
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold tracking-wider text-white uppercase shadow-sm transition-all hover:bg-emerald-500 disabled:opacity-50"
+          >
+            👥 Assigner à une session
+          </button>
+          <button
+            onClick={handleSummarize}
+            disabled={isSummarizing || thread.status !== "completed"}
+            title={
+              thread.status !== "completed"
+                ? "L'élève doit d'abord terminer la session"
+                : ""
+            }
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-bold tracking-wider text-white uppercase shadow-sm transition-all hover:bg-indigo-500 disabled:opacity-50"
+          >
+            {isSummarizing ? "Analyse..." : "🧠 Générer le rapport"}
+          </button>
+          <button
+            onClick={handlePrint}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-bold tracking-wider text-white uppercase shadow-sm transition-all hover:bg-blue-500"
+          >
+            📄 Imprimer / PDF
+          </button>
+        </div>
       </div>
-      <div className="relative flex-1 bg-white">
+      <div className="teacher-readonly-thread relative min-h-0 flex-1 bg-white">
         <Thread />
       </div>
+
+      {showAssignSession && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={() => setShowAssignSession(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-4 text-xl font-black text-zinc-900 uppercase">
+              Assigner {thread.studentName} à une session
+            </h3>
+            <select
+              value={assignSessionId}
+              onChange={(e) => setAssignSessionId(e.target.value)}
+              className="mb-4 w-full rounded-xl border border-zinc-200 bg-white p-3 text-sm text-zinc-900 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+            >
+              <option value="">Sélectionner une session...</option>
+              {(Array.isArray(sessions) ? sessions : [])
+                .filter((sess: any) => !student?.sessionIds?.includes(sess._id))
+                .map((sess: any) => (
+                  <option key={sess._id} value={sess._id}>
+                    {sess.title} {sess.mathLevel ? `(${sess.mathLevel})` : ""}
+                  </option>
+                ))}
+            </select>
+            <div className="flex gap-3">
+              <button
+                onClick={handleAssignSession}
+                disabled={!assignSessionId}
+                className="flex-1 rounded-xl bg-emerald-600 py-3 font-black tracking-widest text-white uppercase disabled:opacity-50"
+              >
+                Assigner
+              </button>
+              <button
+                onClick={() => setShowAssignSession(false)}
+                className="flex-1 py-3 font-bold text-zinc-500"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {summary !== null && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
+          onClick={() => setSummary(null)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-4 text-xl font-black text-zinc-900 uppercase">
+              Rapport de session
+            </h3>
+            <div className="text-sm whitespace-pre-wrap text-zinc-700">
+              {summary}
+            </div>
+            <button
+              onClick={() => setSummary(null)}
+              className="mt-6 w-full rounded-xl bg-zinc-100 py-3 font-bold text-zinc-900 uppercase transition-all hover:bg-zinc-200"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function ThreadViewer({ thread }: { thread: any }) {
+function ThreadViewer({
+  thread,
+  students,
+  sessions,
+  onAssign,
+}: {
+  thread: any;
+  students: any[];
+  sessions: any[];
+  onAssign: (id: string, data: any) => Promise<void>;
+}) {
   // convertMessage: maps raw MongoDB message → ThreadMessageLike
   const convertMessage = (m: any, idx: number) => ({
     id: m._id?.toString() ?? `msg-${idx}`,
@@ -1635,7 +1872,12 @@ function ThreadViewer({ thread }: { thread: any }) {
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <ThreadViewerInner thread={thread} />
+      <ThreadViewerInner
+        thread={thread}
+        students={students}
+        sessions={sessions}
+        onAssign={onAssign}
+      />
     </AssistantRuntimeProvider>
   );
 }

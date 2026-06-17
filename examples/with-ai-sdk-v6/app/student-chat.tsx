@@ -4,7 +4,7 @@ import { Thread } from "@/components/assistant-ui/thread";
 import {
   AssistantRuntimeProvider,
   useThread,
-  SuggestionPrimitive,
+  useAssistantInstructions,
   ThreadPrimitive,
 } from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
@@ -12,7 +12,6 @@ import { useAuth } from "@/lib/auth-context";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
   MessageSquareHeart,
-  Sparkles,
   History,
   User,
   GraduationCap,
@@ -26,7 +25,8 @@ import {
   Printer,
   ChevronDown,
   BookOpenText,
-  Smile,
+  CheckCircle2,
+  FolderOpen,
 } from "lucide-react";
 
 // ─── helper: extraire le texte brut d'un message (ThreadMessage ou MongoDB brut) ────
@@ -158,28 +158,38 @@ function StudentChatInner({
 }) {
   const [historyOpen, setHistoryOpen] = useState(true);
   const [profilOpen, setProfilOpen] = useState(true);
-  const [historyWidth, setHistoryWidth] = useState(280);
-  const [profilWidth, setProfilWidth] = useState(320);
   const messages = useThread((t) => t.messages);
 
   useEffect(() => {
     onMessagesChange(messages as any[]);
   }, [messages, onMessagesChange]);
 
+  // Tells /api/chat which session this is and which uploaded PDFs to search
+  // for relevant context (RAG) — the [[CONTEXT:...]] block is parsed and
+  // stripped server-side before reaching the model.
+  const systemInstruction = useMemo(() => {
+    const objective =
+      session?.objective ?? "Apprendre et progresser avec l'IA.";
+    const documentUrls = (visibleDocuments || []).map((d: any) => d.url);
+    return `${objective}\n\n[[CONTEXT:${JSON.stringify({ sessionId: session?._id, documentUrls })}]]`;
+  }, [session, visibleDocuments]);
+
+  useAssistantInstructions(systemInstruction);
+
   return (
-    <div className="flex flex-1 overflow-hidden bg-[#F4F4F5]">
+    <div className="flex flex-1 overflow-hidden bg-zinc-50">
       {/* 1. Global Navigation Bar (Leftmost) */}
-      <aside className="flex w-22 flex-col items-center gap-10 border-r border-zinc-200 bg-white py-10">
+      <aside className="flex w-20 flex-col items-center gap-6 border-r border-zinc-200 bg-white py-8">
         <TabButton
           active={activeTab === "chat"}
           onClick={() => setActiveTab("chat")}
-          icon={<MessageSquareHeart size={28} />}
+          icon={<MessageSquareHeart size={20} />}
           label="Chat"
         />
         <TabButton
           active={activeTab === "docs"}
           onClick={() => setActiveTab("docs")}
-          icon={<BookOpenText size={28} />}
+          icon={<BookOpenText size={20} />}
           label="Docs"
         />
       </aside>
@@ -190,49 +200,42 @@ function StudentChatInner({
           <div className="flex h-full w-full overflow-hidden">
             {/* Left Sidebar: Historique */}
             <aside
-              className={`cubic-bezier(0.4, 0, 0.2, 1) relative flex flex-col border-r-[5px] border-black bg-white transition-all duration-500 ${
-                historyOpen ? "" : "w-0 overflow-hidden border-r-0"
+              className={`relative flex flex-col border-r border-zinc-200 bg-white transition-all duration-300 ${
+                historyOpen ? "w-64" : "w-0 overflow-hidden border-r-0"
               }`}
-              style={{ width: historyOpen ? historyWidth : 0 }}
             >
-              <div className="flex h-full w-[280px] flex-col overflow-hidden">
-                <div className="border-b-[5px] border-black bg-[#FFD600] p-5 shadow-sm">
-                  <h2 className="flex items-center gap-2 text-sm font-black tracking-widest text-black uppercase">
-                    <Sparkles className="text-yellow-500" size={20} />{" "}
+              <div className="flex h-full w-64 flex-col overflow-hidden">
+                <div className="flex items-center gap-2 border-b border-zinc-200 p-4">
+                  <History size={16} className="text-zinc-400" />
+                  <h2 className="text-xs font-bold tracking-widest text-zinc-500 uppercase">
                     Historique
                   </h2>
                 </div>
-                <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto bg-zinc-50/50 p-5">
+                <div className="custom-scrollbar flex-1 space-y-2 overflow-y-auto p-3">
                   {(historyThreads || []).map((t: any) => {
-                    const isSelected =
-                      (session?.title || "Discussion libre") === t.topic;
+                    const isSelected = session?._id === t.sessionId;
                     return (
                       <button
                         key={t._id}
-                        onClick={() => {
-                          if (t.topic === "Discussion libre") {
-                            onSessionChange("free-discussion");
-                          } else {
-                            const found = user.studentData?.sessionIds?.find(
-                              (s: any) => s.title === t.topic,
-                            );
-                            if (found) onSessionChange(found._id);
-                          }
-                        }}
-                        className={`group w-full rounded-2xl border-[3px] border-black p-4 text-left shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
-                          isSelected ? "bg-[#FFD600]" : "bg-white"
+                        onClick={() => onSessionChange(t.sessionId)}
+                        className={`w-full rounded-xl border p-3 text-left transition-all ${
+                          isSelected
+                            ? "border-blue-400 bg-blue-50"
+                            : "border-zinc-200 bg-white hover:bg-zinc-50"
                         }`}
                       >
-                        <h3 className="mb-1 truncate text-[11px] font-black uppercase">
+                        <h3
+                          className={`truncate text-sm font-semibold ${
+                            isSelected ? "text-blue-700" : "text-zinc-800"
+                          }`}
+                        >
                           {t.topic}
                         </h3>
-                        <div className="flex items-center justify-between opacity-70">
-                          <span className="text-[9px] font-bold">
+                        <div className="mt-1 flex items-center justify-between text-[10px] font-medium text-zinc-400">
+                          <span>
                             {new Date(t.updatedAt).toLocaleDateString()}
                           </span>
-                          <span className="text-[9px] font-black uppercase">
-                            {t.messages?.length || 0} msg
-                          </span>
+                          <span>{t.messages?.length || 0} msg</span>
                         </div>
                       </button>
                     );
@@ -246,57 +249,47 @@ function StudentChatInner({
               {/* History Toggle Button */}
               <button
                 onClick={() => setHistoryOpen(!historyOpen)}
-                className="absolute top-1/2 left-0 z-40 flex h-14 w-8 -translate-y-1/2 items-center justify-center rounded-r-xl border-[3px] border-l-0 border-black bg-[#FFD600] text-sm font-black shadow-[3px_0px_0px_0px_rgba(0,0,0,1)] transition-all hover:bg-[#FFEB3B] active:scale-95"
+                className="absolute top-1/2 left-0 z-40 flex h-10 w-6 -translate-y-1/2 items-center justify-center rounded-r-lg border border-zinc-200 bg-white text-zinc-400 shadow-sm transition-all hover:bg-zinc-50 hover:text-zinc-700"
               >
-                {historyOpen ? "◀" : "▶"}
+                {historyOpen ? (
+                  <ChevronLeft size={14} />
+                ) : (
+                  <ChevronRight size={14} />
+                )}
               </button>
 
               {/* Profil Toggle Button */}
               <button
                 onClick={() => setProfilOpen(!profilOpen)}
-                className="absolute top-1/2 right-0 z-40 flex h-14 w-8 -translate-y-1/2 items-center justify-center rounded-l-xl border-[3px] border-r-0 border-black bg-[#FFD600] text-sm font-black shadow-[-3px_0px_0px_0px_rgba(0,0,0,1)] transition-all hover:bg-[#FFEB3B] active:scale-95"
+                className="absolute top-1/2 right-0 z-40 flex h-10 w-6 -translate-y-1/2 items-center justify-center rounded-l-lg border border-zinc-200 bg-white text-zinc-400 shadow-sm transition-all hover:bg-zinc-50 hover:text-zinc-700"
               >
-                {profilOpen ? "▶" : "◀"}
+                {profilOpen ? (
+                  <ChevronRight size={14} />
+                ) : (
+                  <ChevronLeft size={14} />
+                )}
               </button>
 
-              <div className="mx-auto flex h-full w-full max-w-4xl flex-col border-x border-zinc-200">
+              <div className="mx-auto flex h-full w-full max-w-4xl flex-col">
                 <div className="flex-1 overflow-hidden">
                   <Thread />
                 </div>
 
                 {/* Pedagogical Suggestions Bar */}
-                <div className="flex flex-wrap justify-center gap-2 border-t border-zinc-100 bg-zinc-50/50 p-3">
+                <div className="flex flex-wrap justify-center gap-2 border-t border-zinc-100 bg-zinc-50/60 p-3">
                   <SuggestionPill
                     label="Explique-moi plus simplement"
-                    icon={
-                      <Lightbulb
-                        size={14}
-                        strokeWidth={3}
-                        className="text-yellow-600"
-                      />
-                    }
+                    icon={<Lightbulb size={13} className="text-amber-500" />}
                     prompt="Peux-tu m'expliquer cela avec des mots plus simples et des exemples concrets ?"
                   />
                   <SuggestionPill
                     label="Traduis dans ma langue maternelle"
-                    icon={
-                      <Languages
-                        size={14}
-                        strokeWidth={3}
-                        className="text-blue-600"
-                      />
-                    }
+                    icon={<Languages size={13} className="text-blue-500" />}
                     prompt="Peux-tu me traduire ce que tu viens de dire dans ma langue maternelle ?"
                   />
                   <SuggestionPill
                     label="Donne-moi un exercice"
-                    icon={
-                      <Brain
-                        size={14}
-                        strokeWidth={3}
-                        className="text-purple-600"
-                      />
-                    }
+                    icon={<Brain size={13} className="text-purple-500" />}
                     prompt="Propose-moi un petit exercice pour vérifier que j'ai bien compris."
                   />
                 </div>
@@ -305,45 +298,47 @@ function StudentChatInner({
 
             {/* Right Sidebar: Profil */}
             <aside
-              className={`cubic-bezier(0.4, 0, 0.2, 1) relative flex flex-col border-l-[5px] border-black bg-white transition-all duration-500 ${
-                profilOpen ? "" : "w-0 overflow-hidden border-l-0"
+              className={`relative flex flex-col border-l border-zinc-200 bg-white transition-all duration-300 ${
+                profilOpen ? "w-72" : "w-0 overflow-hidden border-l-0"
               }`}
-              style={{ width: profilOpen ? profilWidth : 0 }}
             >
-              <div className="custom-scrollbar flex h-full w-[320px] flex-col overflow-y-auto p-8">
-                <div className="mb-8 rounded-3xl border-[4px] border-black bg-zinc-50 p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                  <h2 className="mb-2 text-xs font-black tracking-widest text-zinc-500 uppercase">
-                    👤 Profil Étudiant
+              <div className="custom-scrollbar flex h-full w-72 flex-col overflow-y-auto p-6">
+                <div className="mb-6 flex items-center gap-2 text-zinc-400">
+                  <User size={16} />
+                  <h2 className="text-xs font-bold tracking-widest text-zinc-500 uppercase">
+                    Profil étudiant
                   </h2>
-                  <div className="text-xl leading-tight font-black text-black uppercase">
+                </div>
+                <div className="mb-6 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                  <div className="text-lg font-bold text-zinc-900">
                     {user.studentData?.firstName} {user.studentData?.lastName}
                   </div>
                 </div>
 
-                <div className="space-y-8">
-                  <div className="rounded-3xl border-[4px] border-black bg-zinc-900 p-6 text-white shadow-[8px_8px_0px_0px_rgba(0,0,0,0.2)]">
-                    <h3 className="mb-2 text-[10px] font-black tracking-widest text-zinc-400 uppercase">
-                      ID Système
+                <div className="space-y-4">
+                  <div className="rounded-xl bg-zinc-900 p-4 text-white">
+                    <h3 className="mb-1 text-[10px] font-bold tracking-widest text-zinc-400 uppercase">
+                      ID système
                     </h3>
-                    <code className="text-2xl font-black tracking-widest text-[#FFD600]">
+                    <code className="text-base font-bold tracking-wide">
                       {user.studentId}
                     </code>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-2xl border-[4px] border-black bg-[#E3F2FD] p-4 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                      <div className="mb-1 text-[10px] font-black text-blue-800/60 uppercase">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
+                      <div className="mb-1 text-[10px] font-bold text-blue-600/70 uppercase">
                         Français
                       </div>
-                      <div className="text-2xl font-black text-blue-600">
+                      <div className="text-xl font-bold text-blue-700">
                         {user.studentData?.frenchLevel}
                       </div>
                     </div>
-                    <div className="rounded-2xl border-[4px] border-black bg-[#FFF8E1] p-4 text-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                      <div className="mb-1 text-[10px] font-black text-amber-800/60 uppercase">
+                    <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-center">
+                      <div className="mb-1 text-[10px] font-bold text-amber-600/70 uppercase">
                         Math
                       </div>
-                      <div className="text-2xl font-black text-amber-600">
+                      <div className="text-xl font-bold text-amber-700">
                         {user.studentData?.mathLevel || "<6ème"}
                       </div>
                     </div>
@@ -355,9 +350,13 @@ function StudentChatInner({
         )}
 
         {activeTab === "docs" && (
-          <div className="custom-scrollbar h-full overflow-y-auto p-4 md:p-8">
-            <h2 className="mb-6 text-xl font-black tracking-tighter uppercase md:text-3xl">
-              📚 Documents de cours ({user.studentData?.mathLevel || "Général"})
+          <div className="custom-scrollbar h-full overflow-y-auto p-6 md:p-10">
+            <h2 className="mb-6 flex items-center gap-2 text-lg font-bold text-zinc-900 md:text-xl">
+              <BookOpenText size={20} className="text-zinc-400" />
+              Documents de cours
+              <span className="text-sm font-normal text-zinc-400">
+                ({user.studentData?.mathLevel || "Général"})
+              </span>
             </h2>
             {visibleDocuments.length > 0 ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -367,12 +366,16 @@ function StudentChatInner({
                     href={doc.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-4 rounded-2xl border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-1"
+                    className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition-all hover:border-blue-200 hover:shadow-md"
                   >
-                    <div className="text-4xl">📄</div>
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-500">
+                      <FileText size={20} />
+                    </div>
                     <div>
-                      <div className="font-black uppercase">{doc.name}</div>
-                      <div className="text-xs font-bold text-zinc-500">
+                      <div className="font-semibold text-zinc-900">
+                        {doc.name}
+                      </div>
+                      <div className="text-xs text-zinc-400">
                         Cliquer pour ouvrir
                       </div>
                     </div>
@@ -380,19 +383,20 @@ function StudentChatInner({
                 ))}
               </div>
             ) : (
-              <div className="flex h-64 flex-col items-center justify-center rounded-3xl border-4 border-dashed border-zinc-300 bg-zinc-50 text-zinc-400">
-                <div className="text-5xl opacity-30 grayscale">📂</div>
-                <p className="mt-4 font-bold tracking-widest uppercase">
-                  Aucun document disponible pour votre cycle
+              <div className="flex h-56 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50 text-zinc-400">
+                <FolderOpen size={36} className="opacity-40" />
+                <p className="text-sm font-medium">
+                  Aucun document disponible pour ce cycle
                 </p>
               </div>
             )}
 
-            <div className="mt-8 rounded-3xl border-4 border-black bg-yellow-100 p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              <h3 className="mb-2 font-black tracking-tight uppercase">
-                💡 Objectif pédagogique
+            <div className="mt-8 rounded-xl border border-blue-100 bg-blue-50 p-5">
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-blue-900">
+                <Lightbulb size={16} className="text-blue-500" />
+                Objectif pédagogique
               </h3>
-              <p className="text-lg leading-relaxed font-medium">
+              <p className="text-sm leading-relaxed text-blue-800">
                 {session?.objective ?? "Apprendre et progresser avec l'IA."}
               </p>
             </div>
@@ -403,32 +407,19 @@ function StudentChatInner({
   );
 }
 
-function CompactSkillBar({
+function SuggestionPill({
   label,
-  value,
-  color,
+  icon,
+  prompt,
 }: {
   label: string;
-  value: number;
-  color: string;
+  icon?: React.ReactNode;
+  prompt: string;
 }) {
   return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-[10px] font-black uppercase">
-        <span>{label}</span>
-        <span>{value}%</span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full border-2 border-black bg-zinc-100">
-        <div className={`h-full ${color}`} style={{ width: `${value}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function SuggestionPill({ label, prompt }: { label: string; prompt: string }) {
-  return (
     <ThreadPrimitive.Suggestion prompt={prompt} send asChild>
-      <button className="rounded-full border-2 border-black bg-white px-4 py-1.5 text-xs font-black transition-all hover:-translate-y-0.5 hover:bg-[#FFD600] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-none">
+      <button className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-medium text-zinc-600 transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">
+        {icon}
         {label}
       </button>
     </ThreadPrimitive.Suggestion>
@@ -439,42 +430,15 @@ function TabButton({ active, onClick, icon, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 transition-all hover:scale-110 md:gap-1 ${
-        active ? "text-blue-600" : "text-zinc-400 hover:text-zinc-600"
+      className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 text-[10px] font-semibold transition-all ${
+        active
+          ? "bg-blue-50 text-blue-600"
+          : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-600"
       }`}
     >
       {icon}
-      <span className="text-[8px] font-black tracking-tighter uppercase md:text-[10px]">
-        {label}
-      </span>
+      {label}
     </button>
-  );
-}
-
-function SkillBar({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
-  return (
-    <div className="mb-4 rounded-2xl border-4 border-black bg-white p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-black tracking-tight uppercase">
-          {label}
-        </span>
-        <span className="text-xl font-black">{value}%</span>
-      </div>
-      <div className="h-5 w-full overflow-hidden rounded-full border-2 border-black bg-zinc-100">
-        <div
-          className={`h-full ${color} transition-all duration-1000`}
-          style={{ width: `${value}%` }}
-        />
-      </div>
-    </div>
   );
 }
 
@@ -489,7 +453,7 @@ function StudentChatContent({
   initialMessages: any[];
   historyThreads: any[];
   activeSessionId: string | null;
-  setActiveSessionId: (id: string) => void;
+  setActiveSessionId: (id: string | null) => void;
   user: any;
   logout: () => void;
 }) {
@@ -504,7 +468,7 @@ function StudentChatContent({
     const freeDiscussion = {
       _id: "free-discussion",
       title: "Discussion libre",
-      objective: "Apprendre et progresser với l'IA.",
+      objective: "Apprendre et progresser avec l'IA.",
       documents: [],
       subject: "Général",
     };
@@ -555,6 +519,7 @@ function StudentChatContent({
             mathLevel: user.studentData?.mathLevel ?? "<6ème",
             subject: session?.subject ?? "Général",
             topic: session?.title ?? "Discussion libre",
+            sessionId: activeSessionId ?? "free-discussion",
           }),
         });
         if (res.ok) {
@@ -568,7 +533,7 @@ function StudentChatContent({
         setSyncStatus("error");
       }
     },
-    [user, session],
+    [user, session, activeSessionId],
   );
 
   const handleMessagesChange = useCallback(
@@ -620,50 +585,73 @@ function StudentChatContent({
     });
   };
 
+  const handleEndSession = async () => {
+    if (
+      !confirm(
+        "Terminer cette session ? Tu pourras toujours revenir consulter l'historique.",
+      )
+    ) {
+      return;
+    }
+    // Flush any pending sync so the last messages aren't lost before completion.
+    if (syncTimer.current) clearTimeout(syncTimer.current);
+    await syncWithDB(latestMessages.current);
+
+    const thread = historyThreads.find(
+      (t: any) => t.sessionId === activeSessionId,
+    );
+    if (thread?._id) {
+      await fetch(`/api/threads/${thread._id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed" }),
+      });
+    }
+    setActiveSessionId(null);
+  };
+
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <div className="flex h-screen flex-col bg-white font-sans text-black">
-        <header className="flex items-center justify-between border-b-4 border-black bg-yellow-400 p-3 shadow-md md:p-5">
-          <div className="flex items-center gap-3 md:gap-5">
-            <div className="text-3xl md:text-5xl">🎓</div>
+      <div className="flex h-screen flex-col bg-white font-sans text-zinc-900">
+        <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-4 py-3 md:px-8">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50 text-blue-500 md:h-11 md:w-11">
+              <GraduationCap size={20} className="md:size-6" />
+            </div>
             <div>
-              <h1 className="text-base font-black tracking-tight uppercase md:text-2xl">
+              <h1 className="text-sm font-bold text-zinc-900 md:text-lg">
                 Bonjour {user.studentData?.firstName} !
               </h1>
-              <div className="mt-1 flex items-center gap-2 md:mt-2 md:gap-3">
+              <div className="mt-1 flex items-center gap-2">
                 <div
-                  className={`h-2 w-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.3)] md:h-2.5 md:w-2.5 ${
+                  className={`h-1.5 w-1.5 rounded-full ${
                     syncStatus === "syncing"
                       ? "animate-pulse bg-blue-500"
                       : syncStatus === "success"
-                        ? "bg-green-500"
+                        ? "bg-emerald-500"
                         : syncStatus === "error"
                           ? "bg-red-500"
-                          : "bg-zinc-600"
+                          : "bg-zinc-300"
                   }`}
                 />
 
                 <div className="relative">
                   <button
                     onClick={() => setShowSessionMenu(!showSessionMenu)}
-                    className="group flex items-center gap-2 rounded-lg border-2 border-black bg-white px-2 py-1 transition-all hover:bg-zinc-50 active:translate-y-0.5 md:gap-3 md:rounded-xl md:px-4 md:py-2"
+                    className="group flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-zinc-700 transition-all hover:bg-zinc-50 md:rounded-xl md:px-3 md:py-1.5"
                   >
-                    <span className="text-sm md:text-lg">
-                      {session?._id === "free-discussion" ? "💬" : "🏫"}
-                    </span>
-                    <div className="flex flex-col items-start leading-none md:leading-tight">
-                      <span className="hidden text-[8px] font-black tracking-widest text-zinc-400 uppercase md:block md:text-[10px]">
-                        Mode actuel
+                    <div className="flex flex-col items-start leading-none">
+                      <span className="hidden text-[9px] font-medium text-zinc-400 md:block">
+                        Session actuelle
                       </span>
-                      <span className="max-w-[80px] truncate text-[10px] font-black tracking-tight uppercase md:max-w-none md:text-sm">
+                      <span className="max-w-[100px] truncate text-xs font-semibold md:max-w-none md:text-sm">
                         {session?.title}
                       </span>
                     </div>
-                    <span
-                      className={`ml-1 text-[8px] transition-transform duration-300 md:ml-2 md:text-xs ${showSessionMenu ? "rotate-180" : ""}`}
-                    >
-                      ▼
-                    </span>
+                    <ChevronDown
+                      size={13}
+                      className={`text-zinc-400 transition-transform duration-200 ${showSessionMenu ? "rotate-180" : ""}`}
+                    />
                   </button>
 
                   {showSessionMenu && (
@@ -672,12 +660,12 @@ function StudentChatContent({
                         className="fixed inset-0 z-40"
                         onClick={() => setShowSessionMenu(false)}
                       />
-                      <div className="animate-in fade-in slide-in-from-top-2 absolute top-full left-0 z-50 mt-2 w-72 overflow-hidden rounded-2xl border-4 border-black bg-white shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] duration-200">
-                        <div className="p-3">
-                          <p className="mb-2 px-2 text-[9px] font-black tracking-widest text-zinc-400 uppercase">
+                      <div className="absolute top-full left-0 z-50 mt-2 w-72 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+                        <div className="p-2">
+                          <p className="mb-1 px-2 py-1 text-[10px] font-semibold tracking-wide text-zinc-400 uppercase">
                             Choisir votre session
                           </p>
-                          <div className="space-y-1">
+                          <div className="space-y-0.5">
                             {sessions.map((s: any) => (
                               <button
                                 key={s._id}
@@ -685,27 +673,33 @@ function StudentChatContent({
                                   setActiveSessionId(s._id);
                                   setShowSessionMenu(false);
                                 }}
-                                className={`flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all ${
+                                className={`flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-all ${
                                   activeSessionId === s._id
-                                    ? "bg-zinc-900 text-white"
-                                    : "hover:bg-zinc-100"
+                                    ? "bg-blue-50 text-blue-700"
+                                    : "hover:bg-zinc-50"
                                 }`}
                               >
-                                <span className="text-xl">
-                                  {s._id === "free-discussion" ? "💬" : "📚"}
-                                </span>
+                                {s._id === "free-discussion" ? (
+                                  <MessageSquareHeart
+                                    size={16}
+                                    className="text-zinc-400"
+                                  />
+                                ) : (
+                                  <BookOpenText
+                                    size={16}
+                                    className="text-zinc-400"
+                                  />
+                                )}
                                 <div className="flex flex-col">
-                                  <span className="text-xs leading-none font-black uppercase">
+                                  <span className="text-sm leading-none font-medium">
                                     {s.title}
                                   </span>
-                                  <span
-                                    className={`text-[9px] font-bold ${activeSessionId === s._id ? "text-zinc-400" : "text-zinc-500"}`}
-                                  >
+                                  <span className="text-[10px] text-zinc-400">
                                     {s.subject || "Général"}
                                   </span>
                                 </div>
                                 {activeSessionId === s._id && (
-                                  <span className="ml-auto font-black text-blue-400">
+                                  <span className="ml-auto text-blue-500">
                                     ✓
                                   </span>
                                 )}
@@ -720,20 +714,31 @@ function StudentChatContent({
               </div>
             </div>
           </div>
-          <div className="flex gap-1.5 md:gap-3">
+          <div className="flex gap-1.5 md:gap-2">
             {activeTab === "chat" && (
-              <button
-                onClick={handlePrint}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-[10px] font-black text-white shadow transition hover:bg-blue-700 md:rounded-2xl md:px-6 md:py-3 md:text-base"
-              >
-                📄 IMPRIMER
-              </button>
+              <>
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-600 transition hover:bg-zinc-50 md:rounded-xl md:px-4"
+                >
+                  <Printer size={14} />
+                  <span className="hidden sm:inline">Imprimer</span>
+                </button>
+                <button
+                  onClick={handleEndSession}
+                  className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-600 hover:text-white md:rounded-xl md:px-4"
+                >
+                  <CheckCircle2 size={14} />
+                  <span className="hidden sm:inline">Terminer</span>
+                </button>
+              </>
             )}
             <button
               onClick={logout}
-              className="rounded-lg bg-black px-3 py-2 text-[10px] font-black text-white shadow transition hover:bg-zinc-800 md:rounded-2xl md:px-6 md:py-3 md:text-base"
+              className="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-zinc-800 md:rounded-xl md:px-4"
             >
-              QUITTER
+              <LogOut size={14} />
+              <span className="hidden sm:inline">Quitter</span>
             </button>
           </div>
         </header>
@@ -780,9 +785,9 @@ export default function StudentChat() {
           // Free discussion is always first and default
           setActiveSessionId("free-discussion");
 
-          const currentThread =
-            threadData.find((t: any) => t.topic === "Discussion libre") ||
-            threadData[0];
+          const currentThread = threadData.find(
+            (t: any) => t.sessionId === "free-discussion",
+          );
           setInitialMessages(currentThread?.messages ?? []);
         }
 
@@ -803,34 +808,43 @@ export default function StudentChat() {
     return () => clearInterval(interval);
   }, [user?.studentId]);
 
-  // When active session changes, update initial messages for that session
+  // When active session changes, update initial messages for that session.
+  // Threads are looked up by sessionId (unique per session), never by topic
+  // title, so switching sessions can't overwrite or lose another session's history.
   const handleSessionChange = useCallback(
-    (sessionId: string) => {
+    (sessionId: string | null) => {
       setActiveSessionId(sessionId);
-      let topic = "Discussion libre";
-      if (sessionId !== "free-discussion") {
-        const session = currentUserData?.sessionIds?.find(
-          (s: any) => s._id === sessionId,
-        );
-        topic = session?.title || "Discussion libre";
+      if (!sessionId) {
+        setInitialMessages([]);
+        return;
       }
-      const thread = historyThreads.find((t: any) => t.topic === topic);
+      const thread = historyThreads.find((t: any) => t.sessionId === sessionId);
       setInitialMessages(thread?.messages ?? []);
     },
-    [currentUserData, historyThreads],
+    [historyThreads],
   );
 
   if (loading)
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950 text-2xl font-bold text-white">
-        <div className="mr-4 h-12 w-12 animate-spin rounded-full border-t-4 border-blue-500" />
+      <div className="flex h-screen items-center justify-center bg-zinc-50 text-sm font-medium text-zinc-500">
+        <div className="mr-3 h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-blue-500" />
         Chargement...
       </div>
     );
 
+  if (!activeSessionId) {
+    return (
+      <SessionSelectionDashboard
+        user={{ ...user, studentData: currentUserData }}
+        onSelect={handleSessionChange}
+        logout={logout}
+      />
+    );
+  }
+
   return (
     <StudentChatContent
-      key={activeSessionId || "default"}
+      key={activeSessionId}
       initialMessages={initialMessages ?? []}
       historyThreads={historyThreads}
       activeSessionId={activeSessionId}
@@ -838,5 +852,66 @@ export default function StudentChat() {
       user={{ ...user, studentData: currentUserData }}
       logout={logout}
     />
+  );
+}
+
+function SessionSelectionDashboard({
+  user,
+  onSelect,
+  logout,
+}: {
+  user: any;
+  onSelect: (sessionId: string) => void;
+  logout: () => void;
+}) {
+  const sessions = [
+    {
+      _id: "free-discussion",
+      title: "Discussion libre",
+      subject: "Général",
+    },
+    ...(user.studentData?.sessionIds || []),
+  ];
+
+  return (
+    <div className="flex h-screen flex-col bg-zinc-50 font-sans text-zinc-900">
+      <header className="flex items-center justify-between border-b border-zinc-200 bg-white px-6 py-4 md:px-10">
+        <h1 className="text-lg font-bold text-zinc-900 md:text-xl">
+          Choisis ta session, {user.studentData?.firstName}
+        </h1>
+        <button
+          onClick={logout}
+          className="flex items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+        >
+          <LogOut size={14} />
+          Quitter
+        </button>
+      </header>
+      <div className="custom-scrollbar flex-1 overflow-y-auto p-6 md:p-10">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sessions.map((s: any) => (
+            <button
+              key={s._id}
+              onClick={() => onSelect(s._id)}
+              className="flex flex-col items-start gap-3 rounded-2xl border border-zinc-200 bg-white p-6 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+            >
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-500">
+                {s._id === "free-discussion" ? (
+                  <MessageSquareHeart size={20} />
+                ) : (
+                  <BookOpenText size={20} />
+                )}
+              </div>
+              <span className="text-base font-semibold text-zinc-900">
+                {s.title}
+              </span>
+              <span className="text-xs font-medium text-zinc-400">
+                {s.subject || "Général"}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

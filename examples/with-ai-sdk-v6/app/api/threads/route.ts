@@ -10,12 +10,16 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const studentId = searchParams.get("studentId");
     const studentName = searchParams.get("studentName");
+    const sessionId = searchParams.get("sessionId");
 
-    let query = {};
+    const query: Record<string, string> = {};
     if (studentId) {
-      query = { studentId };
+      query.studentId = studentId;
     } else if (studentName) {
-      query = { studentName };
+      query.studentName = studentName;
+    }
+    if (sessionId) {
+      query.sessionId = sessionId;
     }
 
     const threads = await Thread.find(query).sort({ updatedAt: -1 });

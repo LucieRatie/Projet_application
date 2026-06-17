@@ -96,6 +96,13 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #52525b; /* zinc-600 */
   }
+
+  /* Teacher's read-only thread monitor reuses the chat <Thread /> component
+     to render messages but must never let the teacher type into a student's
+     conversation, so the composer footer is hidden here. */
+  .teacher-readonly-thread .aui-thread-viewport-footer {
+    display: none;
+  }
 }
 
 .dark {
