@@ -1,0 +1,210 @@
+# @assistant-ui/react-streamdown
+
+## 0.3.3
+
+### Patch Changes
+
+- [#4348](https://github.com/assistant-ui/assistant-ui/pull/4348) [`5ca6558`](https://github.com/assistant-ui/assistant-ui/commit/5ca655858351dc7ad852ef4bc8292aa74d90e174) - feat: opt-in `defer` prop on the markdown text primitives ([@okisdev](https://github.com/okisdev))
+
+  `StreamdownTextPrimitive` and `MarkdownTextPrimitive` accept a `defer` flag that routes the streamed text through `useDeferredValue`, so re-parsing the growing message runs at a lower priority and typing/scrolling stay responsive while a long message streams in. intermediate streaming states may be skipped under load; the final text always renders. default off; the shadcn kit's markdown-text turns it on.
+
+- [#4357](https://github.com/assistant-ui/assistant-ui/pull/4357) [`fb1a7d3`](https://github.com/assistant-ui/assistant-ui/commit/fb1a7d373cebf29803a83b275fb4795449aef4bd) - feat: `smooth` prop on `StreamdownTextPrimitive` ([@okisdev](https://github.com/okisdev))
+
+  opt-in typewriter reveal via the now-public `useSmooth`, accepting `boolean | SmoothOptions`. the pipeline runs preprocess, then smooth, then the existing `defer` deferral, and `data-status`/`isAnimating` derive from the smooth status so the caret keeps blinking and the copy/download controls stay disabled until the reveal catches up. default off; streamdown's block memoization bounds the per-frame cost to linear string scans plus the tail block parse. the `@assistant-ui/react` peer floor moves to the release that ships `SmoothOptions`.
+
+## 0.3.2
+
+### Patch Changes
+
+- [#4306](https://github.com/assistant-ui/assistant-ui/pull/4306) [`15878d8`](https://github.com/assistant-ui/assistant-ui/commit/15878d8114edbbb82c2a467cf811478e5f4e08bc) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+## 0.3.1
+
+### Patch Changes
+
+- [#4085](https://github.com/assistant-ui/assistant-ui/pull/4085) [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- Updated dependencies [[`b02b701`](https://github.com/assistant-ui/assistant-ui/commit/b02b7012cff158b4e73b82503b9ea90638b7398d), [`0a0c306`](https://github.com/assistant-ui/assistant-ui/commit/0a0c306286598ea885b046a1dfb85016f720051c), [`01244a5`](https://github.com/assistant-ui/assistant-ui/commit/01244a56026ee92bd4e49cb985136f9eb6d45154), [`f2ec01c`](https://github.com/assistant-ui/assistant-ui/commit/f2ec01ce0f01317a8444b779d88f9b6a26d691c5)]:
+  - @assistant-ui/react@0.14.8
+
+## 0.3.0
+
+### Patch Changes
+
+- Updated dependencies [[`040d469`](https://github.com/assistant-ui/assistant-ui/commit/040d469acfcf782de6fc188c646dfd8732d27088)]:
+  - @assistant-ui/react@0.14.0
+
+## 0.2.0
+
+### Patch Changes
+
+- Updated dependencies [[`801b9a6`](https://github.com/assistant-ui/assistant-ui/commit/801b9a68d9c7c70ab15ca53842d0df6adacb7b86), [`7098bab`](https://github.com/assistant-ui/assistant-ui/commit/7098bab4c67fbd507c3fad746ef130daa01b3fd6), [`aa6e071`](https://github.com/assistant-ui/assistant-ui/commit/aa6e071fdd6ea832c5aff3f6cf817b2e3eb6ceb0), [`b090acb`](https://github.com/assistant-ui/assistant-ui/commit/b090acb98f6bf3579aab4efedddaff83a0b54c94), [`df7eb3e`](https://github.com/assistant-ui/assistant-ui/commit/df7eb3eee6beeac72d3220707cf4660adf932586), [`f4a693e`](https://github.com/assistant-ui/assistant-ui/commit/f4a693ec1898f6ed0b81be47512fe51fd93a2de8), [`d864d07`](https://github.com/assistant-ui/assistant-ui/commit/d864d0709d9db5f8e042e62cf1f40669f087ba68)]:
+  - @assistant-ui/react@0.13.0
+
+## 0.1.11
+
+### Patch Changes
+
+- [#3876](https://github.com/assistant-ui/assistant-ui/pull/3876) [`ce865bc`](https://github.com/assistant-ui/assistant-ui/commit/ce865bc46af996d53f89e18068139d4d38546ca6) - chore: update dependencies ([@Yonom](https://github.com/Yonom))
+
+- [#3851](https://github.com/assistant-ui/assistant-ui/pull/3851) [`e19c347`](https://github.com/assistant-ui/assistant-ui/commit/e19c34787097bcf9aedd77f416e28ebd85f948ba) - fix: pass memoized code component to streamdown instead of invoking it as a function, and render CodeHeader when no SyntaxHighlighter is configured for a block ([@okisdev](https://github.com/okisdev))
+
+- Updated dependencies [[`ce865bc`](https://github.com/assistant-ui/assistant-ui/commit/ce865bc46af996d53f89e18068139d4d38546ca6), [`c56f98f`](https://github.com/assistant-ui/assistant-ui/commit/c56f98f5759e710281fc57b343b41af102914f1a), [`9aa5410`](https://github.com/assistant-ui/assistant-ui/commit/9aa54107fc76509830309bb5e2c74984408b97fe), [`a1f84ae`](https://github.com/assistant-ui/assistant-ui/commit/a1f84ae7b7782be19a25369905171de997f327ac), [`b4fde97`](https://github.com/assistant-ui/assistant-ui/commit/b4fde97355b51ed7a35401eeed0e5f5943a51150), [`d53ff4f`](https://github.com/assistant-ui/assistant-ui/commit/d53ff4f3f8b7d7220c1cb274c4fda335598fb063), [`17958c9`](https://github.com/assistant-ui/assistant-ui/commit/17958c9234ccc42394260125df54d897c06a47fd), [`477fa8a`](https://github.com/assistant-ui/assistant-ui/commit/477fa8a4c94d8922f5639dac8888fc55926f36cd)]:
+  - @assistant-ui/react@0.12.26
+
+## 0.1.10
+
+### Patch Changes
+
+- c988db8: chore: update dependencies
+- Updated dependencies [c988db8]
+  - @assistant-ui/react@0.12.25
+
+## 0.1.9
+
+### Patch Changes
+
+- bdce66f: chore: update dependencies
+- 209ae81: chore: remove aui-source export condition from package.json exports
+- Updated dependencies [6554892]
+- Updated dependencies [d726499]
+- Updated dependencies [876f75d]
+- Updated dependencies [bdce66f]
+- Updated dependencies [c362685]
+- Updated dependencies [4abb898]
+- Updated dependencies [209ae81]
+- Updated dependencies [50b3100]
+- Updated dependencies [af70d7f]
+  - @assistant-ui/react@0.12.22
+
+## 0.1.8
+
+### Patch Changes
+
+- 52403c3: chore: update dependencies
+- Updated dependencies [3227e71]
+- Updated dependencies [52403c3]
+  - @assistant-ui/react@0.12.21
+
+## 0.1.7
+
+### Patch Changes
+
+- 736344c: chore: update dependencies
+- 3bd38ed: fix(react-streamdown): preserve data-block in PreOverride for block code detection
+- Updated dependencies [28a987a]
+- Updated dependencies [736344c]
+- Updated dependencies [ff3be2a]
+- Updated dependencies [70b19f3]
+- Updated dependencies [70b19f3]
+- Updated dependencies [c71cb58]
+  - @assistant-ui/react@0.12.20
+
+## 0.1.6
+
+### Patch Changes
+
+- 349f3c7: chore: update deps
+- Updated dependencies [1ed9867]
+- Updated dependencies [427ffaa]
+- Updated dependencies [349f3c7]
+- Updated dependencies [02614aa]
+- Updated dependencies [642bcda]
+  - @assistant-ui/react@0.12.18
+
+## 0.1.5
+
+### Patch Changes
+
+- 613c884: fix(react-streamdown): useMessagePartText provide status
+- Updated dependencies [5ae74fe]
+- Updated dependencies [8ed9d6f]
+  - @assistant-ui/react@0.12.16
+
+## 0.1.4
+
+### Patch Changes
+
+- 36ef3a2: chore: update dependencies
+- Updated dependencies [36ef3a2]
+- Updated dependencies [6692226]
+- Updated dependencies [c31c0fa]
+- Updated dependencies [1672be8]
+- Updated dependencies [28f39fe]
+- Updated dependencies [3a1cb66]
+- Updated dependencies [14769af]
+- Updated dependencies [7c360ce]
+- Updated dependencies [a638f05]
+- Updated dependencies [8a78cd2]
+  - @assistant-ui/react@0.12.12
+
+## 0.1.3
+
+### Patch Changes
+
+- 93910bd: Rename .tsx files to .ts where no JSX syntax is used
+- Updated dependencies [5bbe8a9]
+- Updated dependencies [5e304ea]
+- Updated dependencies [546c053]
+- Updated dependencies [a7039e3]
+- Updated dependencies [16c10fd]
+- Updated dependencies [98c3d54]
+- Updated dependencies [b181803]
+- Updated dependencies [7836760]
+- Updated dependencies [9276547]
+- Updated dependencies [b65428e]
+- Updated dependencies [af5b085]
+- Updated dependencies [61b54e9]
+- Updated dependencies [a094c45]
+- Updated dependencies [4d7f712]
+- Updated dependencies [ecc29ec]
+- Updated dependencies [6e97999]
+- Updated dependencies [a247fc9]
+- Updated dependencies [f414af9]
+- Updated dependencies [b48912c]
+- Updated dependencies [93910bd]
+- Updated dependencies [58a8472]
+  - @assistant-ui/react@0.12.11
+
+## 0.1.2
+
+### Patch Changes
+
+- a088518: chore: update dependencies
+- Updated dependencies [a088518]
+- Updated dependencies [d8122cc]
+  - @assistant-ui/react@0.12.9
+
+## 0.1.1
+
+### Patch Changes
+
+- d45b893: chore: update dependencies
+- Updated dependencies [d45b893]
+- Updated dependencies [fe71bfc]
+  - @assistant-ui/react@0.12.5
+
+## 0.1.0
+
+### Minor Changes
+
+- 378a9fd: feat: add @assistant-ui/react-streamdown package
+
+  New package providing Streamdown-based markdown rendering as an alternative to `@assistant-ui/react-markdown`.
+
+  Features:
+  - `StreamdownTextPrimitive` component for rendering markdown
+  - Built-in support for Shiki syntax highlighting, KaTeX math, and Mermaid diagrams via plugins
+  - Compatibility API for migrating from react-markdown (SyntaxHighlighter, CodeHeader, componentsByLanguage)
+  - Optimized streaming with block-based rendering and remend
+
+### Patch Changes
+
+- Updated dependencies [07d1c65]
+- Updated dependencies [b591d72]
+- Updated dependencies [59a338a]
+- Updated dependencies [acbaf07]
+- Updated dependencies [c665612]
+- Updated dependencies [0371d72]
+- Updated dependencies [e8b3f34]
+  - @assistant-ui/react@0.12.3
