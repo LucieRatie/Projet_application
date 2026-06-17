@@ -15,6 +15,8 @@ import {
   LogOut,
   ShieldCheck,
 } from "lucide-react";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { toast, Toaster } from "sonner";
 
 // ... rest of the file ...
 // In NavButton/Sidebar, update the icons:
@@ -53,12 +55,14 @@ function printPDF(
     (m: any) => m.role === "user" || m.role === "assistant",
   );
   if (filtered.length === 0) {
-    alert("Aucun message à exporter.");
+    toast.warning("Aucun message à exporter.");
     return;
   }
   const pw = window.open("", "_blank");
   if (!pw) {
-    alert("Veuillez autoriser les popups pour imprimer.");
+    toast.error(
+      "Veuillez autoriser les fenêtres contextuelles (popups) pour imprimer.",
+    );
     return;
   }
   const dateStr = new Date().toLocaleDateString("fr-FR", {
@@ -110,13 +114,13 @@ function printPDF(
 
 function printStudentList(students: any[]) {
   if (!students || students.length === 0) {
-    alert("Aucun élève à exporter.");
+    toast.warning("Aucun élève à exporter.");
     return;
   }
 
   const levels = ["<6ème", "6ème", "5ème", "4ème", "3ème", ">3ème"];
 
-  // Sắp xếp học sinh theo trình độ (mathLevel)
+  // Trier les élèves par niveau (mathLevel)
   const sorted = [...students].sort((a, b) => {
     const levelOrder =
       levels.indexOf(a.mathLevel) - levels.indexOf(b.mathLevel);
@@ -190,7 +194,9 @@ function printStudentList(students: any[]) {
   const win = window.open(url, "_blank");
 
   if (!win) {
-    alert("Veuillez autoriser các cửa sổ bật lên (popups) để xem danh sách.");
+    toast.error(
+      "Veuillez autoriser les fenêtres contextuelles (popups) pour voir la liste.",
+    );
   }
 }
 
@@ -204,7 +210,27 @@ export default function TeacherDashboard() {
   const [sessions, setSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    description: "",
+    onConfirm: () => {},
+  });
+
   const { user, logout } = useAuth();
+
+  const askConfirmation = (
+    title: string,
+    description: string,
+    onConfirm: () => void,
+  ) => {
+    setConfirmConfig({ isOpen: true, title, description, onConfirm });
+  };
 
   const fetchData = async (silent = false) => {
     try {
@@ -327,58 +353,84 @@ export default function TeacherDashboard() {
           {activeTab === "monitor" && (
             <div className="flex h-full flex-col md:flex-row">
               <aside className="custom-scrollbar flex h-1/3 flex-col gap-2 overflow-y-auto border-b border-zinc-200 p-2 md:h-full md:w-64 md:border-r md:border-b-0 md:p-4">
-                {(Array.isArray(threads) ? threads : []).map((t) => (
-                  <div
-                    key={t._id}
-                    onClick={() => setSelectedThread(t)}
-                    className={`group/card relative cursor-pointer rounded-xl border p-3 transition-all ${selectedThread?._id === t._id ? "border-blue-400 bg-blue-50" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="overflow-hidden">
-                        <div
-                          className={`truncate font-bold tracking-tight uppercase ${selectedThread?._id === t._id ? "text-blue-600" : "text-zinc-800"}`}
-                        >
-                          {t.studentName}
-                        </div>
-                        <div className="mt-1 truncate text-[10px] font-bold text-zinc-500">
-                          {t.topic || "Discussion"}
-                        </div>
-                      </div>
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (
-                            confirm(
-                              `Supprimer l'historique de ${t.studentName} ?`,
-                            )
-                          ) {
-                            const res = await fetch(`/api/threads/${t._id}`, {
-                              method: "DELETE",
-                            });
-                            if (res.ok) {
-                              if (selectedThread?._id === t._id) {
-                                setSelectedThread(null);
-                              }
-                              fetchData(true);
-                            }
-                          }
-                        }}
-                        className="ml-2 flex-shrink-0 text-zinc-400 opacity-0 transition group-hover/card:opacity-100 hover:text-red-500"
-                        title="Supprimer la discussion"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                {(Array.isArray(threads) ? threads : []).length === 0 ? (
+                  <div className="flex h-full items-center justify-center p-4 text-center text-[10px] font-bold text-zinc-400 uppercase">
+                    Aucune discussion
                   </div>
-                ))}
+                ) : (
+                  (Array.isArray(threads) ? threads : []).map((t) => (
+                    <div
+                      key={t._id}
+                      onClick={() => setSelectedThread(t)}
+                      className={`group/card relative cursor-pointer rounded-xl border p-3 transition-all ${selectedThread?._id === t._id ? "border-blue-400 bg-blue-50" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="overflow-hidden text-left">
+                          <div
+                            className={`truncate font-bold tracking-tight uppercase ${selectedThread?._id === t._id ? "text-blue-600" : "text-zinc-800"}`}
+                          >
+                            {t.studentName}
+                          </div>
+                          <div className="mt-1 truncate text-[10px] font-bold text-zinc-500">
+                            {t.topic || "Discussion"}
+                          </div>
+                        </div>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            askConfirmation(
+                              "Supprimer l'historique ?",
+                              `Voulez-vous vraiment supprimer l'historique de ${t.studentName} ?`,
+                              async () => {
+                                const res = await fetch(
+                                  `/api/threads/${t._id}`,
+                                  {
+                                    method: "DELETE",
+                                  },
+                                );
+                                if (res.ok) {
+                                  if (selectedThread?._id === t._id) {
+                                    setSelectedThread(null);
+                                  }
+                                  fetchData(true);
+                                  toast.success("Historique supprimé");
+                                } else {
+                                  toast.error("Erreur lors de la suppression");
+                                }
+                              },
+                            );
+                          }}
+                          className="ml-2 flex-shrink-0 text-zinc-400 opacity-0 transition group-hover/card:opacity-100 hover:text-red-500"
+                          title="Supprimer la discussion"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
               </aside>
-              <main className="relative flex flex-[3] overflow-hidden bg-white">
+              <main className="relative flex flex-1 overflow-hidden bg-white md:flex-[3]">
                 <div className="flex flex-1 flex-col overflow-hidden">
                   {selectedThread ? (
-                    <ThreadViewer
-                      key={`${selectedThread._id}-${selectedThread.messages?.length ?? 0}-${selectedThread.updatedAt || ""}`}
-                      thread={selectedThread}
-                    />
+                    <div className="flex h-full flex-col">
+                      <div className="flex-1 overflow-hidden">
+                        <ThreadViewer
+                          key={`${selectedThread._id}-${selectedThread.messages?.length ?? 0}-${selectedThread.updatedAt || ""}`}
+                          thread={selectedThread}
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const aside =
+                            document.getElementById("student-info-aside");
+                          if (aside) aside.classList.toggle("hidden");
+                        }}
+                        className="flex w-full items-center justify-center border-t border-zinc-100 bg-zinc-50 py-2 text-[10px] font-black tracking-widest text-zinc-500 uppercase md:hidden"
+                      >
+                        Info Élève 👤
+                      </button>
+                    </div>
                   ) : (
                     <div className="flex h-full items-center justify-center font-bold tracking-widest text-zinc-400 uppercase">
                       Sélectionnez une discussion
@@ -387,9 +439,27 @@ export default function TeacherDashboard() {
                 </div>
               </main>
               {selectedThread && (
-                <aside className="custom-scrollbar relative flex h-full max-w-[400px] min-w-[320px] flex-[1.2] flex-col overflow-y-auto border-l border-zinc-200 bg-zinc-50">
-                  <div className="flex-1 p-6 pb-20">
-                    <h4 className="mb-6 text-[10px] font-black tracking-widest text-zinc-500 uppercase">
+                <aside
+                  id="student-info-aside"
+                  className="custom-scrollbar absolute inset-0 z-20 flex hidden flex-col overflow-y-auto border-l border-zinc-200 bg-zinc-50 md:relative md:flex md:h-full md:max-w-[400px] md:min-w-[320px] md:flex-[1.2]"
+                >
+                  <div className="flex items-center justify-between border-b border-zinc-200 p-4 md:hidden">
+                    <h4 className="text-[10px] font-black tracking-widest text-zinc-500 uppercase">
+                      Fiche Élève
+                    </h4>
+                    <button
+                      onClick={() =>
+                        document
+                          .getElementById("student-info-aside")
+                          ?.classList.add("hidden")
+                      }
+                      className="font-bold text-zinc-500"
+                    >
+                      FERMER ✕
+                    </button>
+                  </div>
+                  <div className="flex-1 p-6 pb-20 md:pb-6">
+                    <h4 className="mb-6 hidden text-[10px] font-black tracking-widest text-zinc-500 uppercase md:block">
                       Fiche Élève
                     </h4>
                     {(() => {
@@ -426,6 +496,7 @@ export default function TeacherDashboard() {
               threads={threads}
               refresh={fetchData}
               updateStudent={updateStudent}
+              askConfirmation={askConfirmation}
             />
           )}
 
@@ -434,10 +505,23 @@ export default function TeacherDashboard() {
               students={students}
               sessions={sessions}
               refresh={fetchData}
+              askConfirmation={askConfirmation}
             />
           )}
         </div>
       </main>
+
+      <ConfirmDelete
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        onConfirm={() => {
+          confirmConfig.onConfirm();
+          setConfirmConfig((prev) => ({ ...prev, isOpen: false }));
+        }}
+        onClose={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
+      <Toaster position="top-right" richColors />
     </div>
   );
 }
@@ -705,11 +789,12 @@ function StudentCard({
                   const data = await res.json();
                   if (data.evaluation) {
                     setLocalDescription(data.evaluation);
+                    toast.success("Évaluation IA terminée");
                   } else {
-                    alert("Erreur lors de l'évaluation");
+                    toast.error("Erreur lors de l'évaluation");
                   }
                 } catch (err) {
-                  alert("Erreur serveur");
+                  toast.error("Erreur serveur");
                 }
               }}
             >
@@ -762,6 +847,7 @@ function StudentManager({
   threads,
   refresh,
   updateStudent,
+  askConfirmation,
 }: any) {
   const [showAdd, setShowAdd] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -804,6 +890,9 @@ function StudentManager({
         mathLevel: "<6ème",
       });
       refresh();
+      toast.success("Élève ajouté");
+    } else {
+      toast.error("Erreur lors de l'ajout");
     }
   };
 
@@ -873,11 +962,22 @@ function StudentManager({
             sessions={sessions}
             threads={threads}
             onUpdate={updateStudent}
-            onDelete={async () => {
-              if (confirm("Supprimer ?")) {
-                await fetch(`/api/students/${s._id}`, { method: "DELETE" });
-                refresh();
-              }
+            onDelete={() => {
+              askConfirmation(
+                "Supprimer l'élève ?",
+                `Voulez-vous vraiment supprimer ${s.firstName} ${s.lastName} ?`,
+                async () => {
+                  const res = await fetch(`/api/students/${s._id}`, {
+                    method: "DELETE",
+                  });
+                  if (res.ok) {
+                    refresh();
+                    toast.success("Élève supprimé");
+                  } else {
+                    toast.error("Erreur lors de la suppression");
+                  }
+                },
+              );
             }}
           />
         ))}
@@ -894,7 +994,7 @@ function StudentManager({
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl md:p-8">
             <h3 className="mb-6 text-2xl font-black text-zinc-900 uppercase">
               Nouvel Élève
             </h3>
@@ -985,7 +1085,7 @@ function StudentManager({
   );
 }
 
-function SessionManager({ students, sessions, refresh }: any) {
+function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
   const [showAdd, setShowAdd] = useState(false);
   const [editingSession, setEditingSession] = useState<any>(null);
   const [showAssign, setShowAssign] = useState<string | null>(null);
@@ -996,8 +1096,8 @@ function SessionManager({ students, sessions, refresh }: any) {
   const [formData, setFormData] = useState({
     title: "",
     objective: "",
-    subject: "Général",
-    mathLevel: "CP",
+    subject: "",
+    mathLevel: "",
     aiDocuments: [] as { name: string; url: string; content?: string }[],
     exerciseDocuments: [] as { name: string; url: string }[],
   });
@@ -1019,8 +1119,8 @@ function SessionManager({ students, sessions, refresh }: any) {
       setFormData({
         title: editingSession.title,
         objective: editingSession.objective,
-        subject: editingSession.subject || "Général",
-        mathLevel: editingSession.mathLevel || "CP",
+        subject: editingSession.subject || "",
+        mathLevel: editingSession.mathLevel || "",
         aiDocuments: editingSession.aiDocuments || [],
         exerciseDocuments: editingSession.exerciseDocuments || [],
       });
@@ -1029,8 +1129,8 @@ function SessionManager({ students, sessions, refresh }: any) {
       setFormData({
         title: "",
         objective: "",
-        subject: "Général",
-        mathLevel: "CP",
+        subject: "",
+        mathLevel: "",
         aiDocuments: [],
         exerciseDocuments: [],
       });
@@ -1071,12 +1171,13 @@ function SessionManager({ students, sessions, refresh }: any) {
                 ],
               }),
         }));
+        toast.success("Fichier téléversé");
       } else {
-        alert("Upload failed: " + data.error);
+        toast.error("Échec du téléversement: " + data.error);
       }
     } catch (err) {
       console.error(err);
-      alert("Upload error");
+      toast.error("Erreur de téléversement");
     } finally {
       setIsUploading(false);
       e.target.value = "";
@@ -1099,6 +1200,9 @@ function SessionManager({ students, sessions, refresh }: any) {
       setShowAdd(false);
       setEditingSession(null);
       refresh();
+      toast.success(editingSession ? "Session mise à jour" : "Session créée");
+    } else {
+      toast.error("Erreur lors de l'enregistrement");
     }
   };
 
@@ -1115,6 +1219,7 @@ function SessionManager({ students, sessions, refresh }: any) {
     setShowAssign(null);
     setSelectedStudents([]);
     refresh();
+    toast.success("Élèves assignés");
   };
 
   return (
@@ -1196,12 +1301,21 @@ function SessionManager({ students, sessions, refresh }: any) {
                 </button>
                 <button
                   onClick={async () => {
-                    if (confirm("Supprimer cette session ?")) {
-                      await fetch(`/api/sessions/${s._id}`, {
-                        method: "DELETE",
-                      });
-                      refresh();
-                    }
+                    askConfirmation(
+                      "Supprimer la session ?",
+                      `Voulez-vous vraiment supprimer la session "${s.title}" ?`,
+                      async () => {
+                        const res = await fetch(`/api/sessions/${s._id}`, {
+                          method: "DELETE",
+                        });
+                        if (res.ok) {
+                          refresh();
+                          toast.success("Session supprimée");
+                        } else {
+                          toast.error("Erreur lors de la suppression");
+                        }
+                      },
+                    );
                   }}
                   className="text-zinc-400 transition hover:text-red-500"
                   title="Supprimer la session"
@@ -1247,7 +1361,7 @@ function SessionManager({ students, sessions, refresh }: any) {
 
       {showStudentList && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/20 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl md:p-8">
             <div className="mb-6 flex items-center justify-between">
               <h3 className="text-2xl font-black text-zinc-900 uppercase">
                 Liste des élèves
@@ -1286,19 +1400,22 @@ function SessionManager({ students, sessions, refresh }: any) {
                     </div>
                     <button
                       onClick={async () => {
-                        if (
-                          confirm(`Retirer ${st.firstName} de cette session ?`)
-                        ) {
-                          await fetch(`/api/students/${st._id}`, {
-                            method: "PATCH",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              action: "removeSession",
-                              sessionId: showStudentList,
-                            }),
-                          });
-                          refresh();
-                        }
+                        askConfirmation(
+                          "Retirer l'élève ?",
+                          `Voulez-vous retirer ${st.firstName} de cette session ?`,
+                          async () => {
+                            await fetch(`/api/students/${st._id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                action: "removeSession",
+                                sessionId: showStudentList,
+                              }),
+                            });
+                            refresh();
+                            toast.success("Élève retiré de la session");
+                          },
+                        );
                       }}
                       className="rounded-lg bg-red-50 px-3 py-1 text-[10px] font-bold text-red-600 transition-all hover:bg-red-600 hover:text-white"
                       title="Retirer de la session"
@@ -1321,7 +1438,7 @@ function SessionManager({ students, sessions, refresh }: any) {
 
       {showAssign && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/20 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl">
+          <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl md:p-8">
             <h3 className="mb-6 text-2xl font-black text-zinc-900 uppercase">
               Assigner des élèves à la session
             </h3>
@@ -1412,7 +1529,7 @@ function SessionManager({ students, sessions, refresh }: any) {
 
       {showAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl">
+          <div className="max-h-[90dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-zinc-200 bg-white p-6 shadow-2xl md:p-8">
             <h3 className="mb-6 text-2xl font-black text-zinc-900 uppercase">
               {editingSession ? "Modifier la Session" : "Nouvelle Session"}
             </h3>
@@ -1441,7 +1558,11 @@ function SessionManager({ students, sessions, refresh }: any) {
                 onChange={(e) =>
                   setFormData({ ...formData, subject: e.target.value })
                 }
+                required
               >
+                <option value="" disabled>
+                  Choisir une matière
+                </option>
                 <option value="Mathématiques">Mathématiques</option>
                 <option value="Français">Français</option>
                 <option value="Sciences">Sciences</option>
@@ -1453,10 +1574,14 @@ function SessionManager({ students, sessions, refresh }: any) {
                 onChange={(e) =>
                   setFormData({ ...formData, mathLevel: e.target.value })
                 }
+                required
               >
+                <option value="" disabled>
+                  Choisir un niveau
+                </option>
                 {MATH_LEVELS.map((level) => (
                   <option key={level} value={level}>
-                    Niveau Math : {level}
+                    Niveau : {level}
                   </option>
                 ))}
               </select>
