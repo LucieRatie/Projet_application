@@ -44,5 +44,23 @@
     "edge 111",
     "firefox 111",
     "safari 16.4"
-  ]
+  ],
+  "version": "1.0.0",
+  "description": "<<<<<<< HEAD # Projet_application ======= # DRAM Pedagogical Assistant Application (Projet Application)",
+  "main": "test-mongo.js",
+  "directories": {
+    "example": "examples"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LucieRatie/Projet_application.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/LucieRatie/Projet_application/issues"
+  },
+  "homepage": "https://github.com/LucieRatie/Projet_application#readme"
 }
