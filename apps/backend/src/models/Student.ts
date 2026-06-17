@@ -9,7 +9,7 @@ const StudentSchema = new mongoose.Schema(
     nativeLanguage: { type: String, default: "Français" },
     frenchLevel: {
       type: String,
-      enum: ["A1", "A2", "B1", "B2"],
+      enum: ["A1", "A2", "B1", "B2", "C1"],
       default: "A1",
     },
     mathLevel: {

@@ -165,6 +165,22 @@ function StudentChatInner({
     onMessagesChange(messages as any[]);
   }, [messages, onMessagesChange]);
 
+  const TabButton = ({ active, onClick, icon, label }: any) => (
+    <button
+      onClick={onClick}
+      className={`flex w-full flex-col items-center gap-2 p-3 transition-colors ${
+        active ? "text-black" : "text-zinc-400 hover:text-black"
+      }`}
+    >
+      <div
+        className={`rounded-xl p-3 ${active ? "bg-[#FFD600]" : "bg-zinc-100"}`}
+      >
+        {icon}
+      </div>
+      <span className="text-[10px] font-black uppercase">{label}</span>
+    </button>
+  );
+
   return (
     <div className="flex flex-1 overflow-hidden bg-[#F4F4F5]">
       {/* 1. Global Navigation Bar (Leftmost) */}
@@ -174,6 +190,12 @@ function StudentChatInner({
           onClick={() => setActiveTab("chat")}
           icon={<MessageSquareHeart size={28} />}
           label="Chat"
+        />
+        <TabButton
+          active={activeTab === "vocabulaire"}
+          onClick={() => setActiveTab("vocabulaire")}
+          icon="📚"
+          label="Mots"
         />
         <TabButton
           active={activeTab === "docs"}
@@ -353,6 +375,12 @@ function StudentChatInner({
           </div>
         )}
 
+        <div
+          className={`custom-scrollbar h-full overflow-y-auto p-4 md:p-8 ${activeTab === "vocabulaire" ? "block" : "hidden"}`}
+        >
+          <GlossaryView session={session} user={user} />
+        </div>
+
         {activeTab === "docs" && (
           <div className="custom-scrollbar h-full overflow-y-auto p-4 md:p-8">
             <h2 className="mb-6 text-xl font-black tracking-tighter uppercase md:text-3xl">
@@ -477,6 +505,91 @@ function SkillBar({
   );
 }
 
+function GlossaryView({ session, user }: { session: any; user: any }) {
+  const [glossary, setGlossary] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const generateGlossary = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("http://localhost:5000/api/glossary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: session?._id,
+          aiDocuments: session?.aiDocuments || [],
+          frenchLevel: user?.studentData?.frenchLevel,
+          nativeLanguage: user?.studentData?.nativeLanguage,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate glossary");
+      setGlossary(data.glossary || []);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-6">
+      <div className="rounded-2xl border-4 border-black bg-white p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+        <h2 className="mb-2 text-2xl font-black uppercase">
+          Vocabulaire Bilingue
+        </h2>
+        <p className="mb-4 text-zinc-600">
+          Générez une liste de mots clés tirés des documents de cette session,
+          traduits en{" "}
+          <strong className="text-black">
+            {user?.studentData?.nativeLanguage || "votre langue"}
+          </strong>
+          .
+        </p>
+        <button
+          onClick={generateGlossary}
+          disabled={loading || !session?.aiDocuments?.length}
+          className="rounded-xl border-4 border-black bg-yellow-400 px-6 py-3 font-bold uppercase transition-transform hover:-translate-y-1 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+        >
+          {loading ? "Génération en cours..." : "✨ Créer mon glossaire"}
+        </button>
+        {(!session?.aiDocuments || session?.aiDocuments.length === 0) && (
+          <p className="mt-2 text-sm font-bold text-red-500">
+            Aucun document dans cette session pour générer le glossaire.
+          </p>
+        )}
+        {error && (
+          <p className="mt-2 text-sm font-bold text-red-500">{error}</p>
+        )}
+      </div>
+
+      {glossary.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {glossary.map((item, idx) => (
+            <div
+              key={idx}
+              className="rounded-xl border-4 border-black bg-blue-50 p-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-colors hover:bg-blue-100"
+            >
+              <div className="mb-2 text-xl font-black text-blue-600">
+                {item.motFr}
+              </div>
+              <div className="mb-2 text-sm font-bold text-zinc-500 uppercase">
+                {user?.studentData?.nativeLanguage} :{" "}
+                <span className="text-black">{item.traduction}</span>
+              </div>
+              <div className="text-sm font-medium text-zinc-700">
+                {item.explication}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StudentChatContent({
   initialMessages,
   historyThreads,
@@ -493,21 +606,12 @@ function StudentChatContent({
   logout: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<
-    "chat" | "docs" | "history" | "profil"
+    "chat" | "docs" | "history" | "profil" | "vocabulaire"
   >("chat");
   const [showSessionMenu, setShowSessionMenu] = useState(false);
 
   const sessions = useMemo(() => {
-    const assigned = user.studentData?.sessionIds || [];
-    // Always include a virtual "Discussion libre" session
-    const freeDiscussion = {
-      _id: "free-discussion",
-      title: "Discussion libre",
-      objective: "Apprendre et progresser avec l'IA.",
-      exerciseDocuments: [],
-      subject: "Géneral",
-    };
-    return [freeDiscussion, ...assigned];
+    return user.studentData?.sessionIds || [];
   }, [user.studentData?.sessionIds]);
 
   const session = useMemo(() => {
@@ -525,9 +629,12 @@ function StudentChatContent({
   );
 
   const runtime = useChatRuntime({
-    api: "http://localhost:5000/api/chat",
+    api: "/api/chat",
     body: {
       aiDocuments: session?.aiDocuments || [],
+      studentId: user?.studentId,
+      frenchLevel: user?.studentData?.frenchLevel,
+      nativeLanguage: user?.studentData?.nativeLanguage,
     },
     messages: sdkInitialMessages,
   });
@@ -771,7 +878,9 @@ export default function StudentChat() {
       if (!user?.studentId) return;
       try {
         const [threadRes, studentRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/threads?studentId=${user.studentId}&t=${Date.now()}`),
+          fetch(
+            `http://localhost:5000/api/threads?studentId=${user.studentId}&t=${Date.now()}`,
+          ),
           fetch(
             `http://localhost:5000/api/students/login?studentId=${user.studentId}&t=${Date.now()}`,
           ),

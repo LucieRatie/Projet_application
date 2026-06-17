@@ -552,8 +552,31 @@ function StudentCard({
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-md transition-shadow hover:shadow-lg">
       <div className="flex items-center justify-end">
-        <div className="font-mono text-[10px] font-bold text-blue-500 opacity-60">
-          ID: {student.studentId}
+        <div className="flex items-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-2 py-1 font-mono text-sm font-bold text-blue-600 shadow-sm">
+          <span>ID: {student.studentId}</span>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(student.studentId);
+              alert("ID copié!");
+            }}
+            className="text-blue-400 transition-colors hover:text-blue-600"
+            title="Copier l'ID"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -659,6 +682,7 @@ function StudentCard({
               <option value="A2">Niveau A2</option>
               <option value="B1">Niveau B1</option>
               <option value="B2">Niveau B2</option>
+              <option value="C1">Niveau C1</option>
             </select>
           </div>
           <div className="flex-1">
@@ -777,11 +801,14 @@ function StudentCard({
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  const res = await fetch("http://localhost:5000/api/evaluate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ studentId: student.studentId }),
-                  });
+                  const res = await fetch(
+                    "http://localhost:5000/api/evaluate",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ studentId: student.studentId }),
+                    },
+                  );
                   const data = await res.json();
                   if (data.evaluation) {
                     setLocalDescription(data.evaluation);
@@ -963,9 +990,12 @@ function StudentManager({
                 "Supprimer l'élève ?",
                 `Voulez-vous vraiment supprimer ${s.firstName} ${s.lastName} ?`,
                 async () => {
-                  const res = await fetch(`http://localhost:5000/api/students/${s._id}`, {
-                    method: "DELETE",
-                  });
+                  const res = await fetch(
+                    `http://localhost:5000/api/students/${s._id}`,
+                    {
+                      method: "DELETE",
+                    },
+                  );
                   if (res.ok) {
                     refresh();
                     toast.success("Élève supprimé");
@@ -1043,6 +1073,7 @@ function StudentManager({
                   <option value="A2">FR A2</option>
                   <option value="B1">FR B1</option>
                   <option value="B2">FR B2</option>
+                  <option value="C1">FR C1</option>
                 </select>
 
                 <select
@@ -1301,9 +1332,12 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
                       "Supprimer la session ?",
                       `Voulez-vous vraiment supprimer la session "${s.title}" ?`,
                       async () => {
-                        const res = await fetch(`http://localhost:5000/api/sessions/${s._id}`, {
-                          method: "DELETE",
-                        });
+                        const res = await fetch(
+                          `http://localhost:5000/api/sessions/${s._id}`,
+                          {
+                            method: "DELETE",
+                          },
+                        );
                         if (res.ok) {
                           refresh();
                           toast.success("Session supprimée");
@@ -1390,8 +1424,40 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
                       <div className="text-sm font-bold text-zinc-900 uppercase">
                         {st.firstName} {st.lastName}
                       </div>
-                      <div className="text-[10px] text-zinc-500">
-                        ID: {st.studentId}
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <span className="rounded border border-blue-100 bg-blue-50 px-1.5 py-0.5 font-mono font-bold text-blue-600">
+                          ID: {st.studentId}
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(st.studentId);
+                            alert("ID copié!");
+                          }}
+                          className="text-zinc-400 hover:text-blue-600"
+                          title="Copier l'ID"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect
+                              width="14"
+                              height="14"
+                              x="8"
+                              y="8"
+                              rx="2"
+                              ry="2"
+                            />
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                     <button
@@ -1400,14 +1466,17 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
                           "Retirer l'élève ?",
                           `Voulez-vous retirer ${st.firstName} de cette session ?`,
                           async () => {
-                            await fetch(`http://localhost:5000/api/students/${st._id}`, {
-                              method: "PATCH",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                action: "removeSession",
-                                sessionId: showStudentList,
-                              }),
-                            });
+                            await fetch(
+                              `http://localhost:5000/api/students/${st._id}`,
+                              {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  action: "removeSession",
+                                  sessionId: showStudentList,
+                                }),
+                              },
+                            );
                             refresh();
                             toast.success("Élève retiré de la session");
                           },
@@ -1493,8 +1562,40 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
                           </div>
                         </div>
                       </div>
-                      <div className="text-[10px] text-zinc-500">
-                        ID: {st.studentId}
+                      <div className="mt-1 flex items-center gap-2 text-xs">
+                        <span className="rounded border border-blue-100 bg-blue-50 px-1.5 py-0.5 font-mono font-bold text-blue-600">
+                          ID: {st.studentId}
+                        </span>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(st.studentId);
+                            alert("ID copié!");
+                          }}
+                          className="text-zinc-400 hover:text-blue-600"
+                          title="Copier l'ID"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect
+                              width="14"
+                              height="14"
+                              x="8"
+                              y="8"
+                              rx="2"
+                              ry="2"
+                            />
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </label>

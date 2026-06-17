@@ -3,7 +3,7 @@ import json
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
 # Importations LangChain (pour le chargement et découpage)
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
@@ -55,8 +55,8 @@ collection = chroma_client.get_or_create_collection(
     embedding_function=embeddings_local
 )
 
-# Séparateur de texte partagé
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+# Séparateur de texte partagé (Réduit pour accélérer l'IA)
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
 
 # --- MODÈLE DE DONNÉES ---
 class FileListInput(BaseModel):
@@ -88,7 +88,10 @@ async def vectorize_files(data: FileListInput):
         if nom_fichier.endswith(".pdf"):
             try:
                 loader = PyPDFLoader(chemin_fichier)
-                tous_les_chunks.extend(text_splitter.split_documents(loader.load()))
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = nom_fichier
+                tous_les_chunks.extend(text_splitter.split_documents(docs))
             except Exception as e:
                 print(f"[Erreur] Lecture PDF {nom_fichier} : {e}")
 
@@ -111,7 +114,10 @@ async def vectorize_files(data: FileListInput):
         else:
             try:
                 loader = TextLoader(chemin_fichier, autodetect_encoding=True)
-                tous_les_chunks.extend(text_splitter.split_documents(loader.load()))
+                docs = loader.load()
+                for doc in docs:
+                    doc.metadata["source"] = nom_fichier
+                tous_les_chunks.extend(text_splitter.split_documents(docs))
             except Exception as e:
                 print(f"[Erreur] Lecture Texte Brut {nom_fichier} : {e}")
 
@@ -136,7 +142,7 @@ async def vectorize_files(data: FileListInput):
 
 
 @app.get("/search")
-async def search_rag(q: str):
+async def search_rag(q: str, sources: Optional[str] = None):
     """
     Interroge la base de données vectorielle Chroma et retourne les 3 résultats
     les plus proches agrégés sous forme de contexte textuel.
@@ -145,10 +151,19 @@ async def search_rag(q: str):
         raise HTTPException(status_code=400, detail="Le paramètre de recherche 'q' est manquant.")
 
     try:
-        # Requête native Chroma (Renvoie les k=3 meilleurs résultats)
+        where_clause = None
+        if sources:
+            filenames = [s.strip() for s in sources.split(",") if s.strip()]
+            if len(filenames) == 1:
+                where_clause = {"source": filenames[0]}
+            elif len(filenames) > 1:
+                where_clause = {"source": {"$in": filenames}}
+
+        # Requête native Chroma (Renvoie les k=2 meilleurs résultats pour plus de rapidité)
         results = collection.query(
             query_texts=[q],
-            n_results=3
+            n_results=2,
+            where=where_clause
         )
 
         # Extraction des textes (Chroma renvoie une liste de listes [[doc1, doc2, doc3]])

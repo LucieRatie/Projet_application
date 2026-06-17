@@ -663,6 +663,7 @@ function StudentCard({
               <option value="A2">Niveau A2</option>
               <option value="B1">Niveau B1</option>
               <option value="B2">Niveau B2</option>
+              <option value="C1">Niveau C1</option>
             </select>
           </div>
           <div className="flex-1">
@@ -1047,6 +1048,7 @@ function StudentManager({
                   <option value="A2">FR A2</option>
                   <option value="B1">FR B1</option>
                   <option value="B2">FR B2</option>
+                  <option value="C1">FR C1</option>
                 </select>
 
                 <select
