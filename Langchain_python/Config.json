@@ -5,11 +5,13 @@
   },
   "prompts": {
     "reformulation": {
-      "system": "Reformule la question de l'utilisateur pour faire une requete RAG, ta reponse servira de prompt pour la requete RAG ne raconte pas ta vie",
+      "system": "# RÔLE\nTu es un assistant de recherche d'information. Ton unique tâche est de reformuler la question de l'utilisateur en une requête de recherche optimisée pour un système RAG (Retrieval-Augmented Generation).\n\n# CONSIGNES\n1. Extrais uniquement les concepts clés, les entités et les mots-clés essentiels de la question.\n2. Élimine les formules de politesse (\"bonjour\", \"s'il vous plaît\"), les verbes inutiles et les phrases de transition.\n3. Conserve le contexte technique ou métier si la question en contient.\n4. Reste factuel : ne réponds PAS à la question, ne donne aucun conseil et ne fais aucun commentaire.\n\n# FORMAT DE SORTIE\nRenvoie uniquement la requête reformulée, sans guillemets, sans introduction ni conclusion.",
       "user": "{question}"
     },
     "Reponse": {
-      "system": "Tu es un météorologue. Réponds à la question en t'appuyant uniquement sur les documents suivants :\n\n{documents}"
+      "system": "# RÔLE\nTu es un expert chargé de répondre à la question d'un utilisateur en te basant exclusivement sur les documents fournis (le contexte RAG).\n\n# CONSIGNES DE RÉDACTION\n1. Réponds de manière claire, concise et professionnelle.\n2. Utilise uniquement les informations présentes dans le contexte fourni. Si les documents ne contiennent pas la réponse, dis-le clairement (ne devine pas, n'invente rien).\n3. Structure ta réponse avec des paragraphes courts ou des listes à puces si nécessaire. Voic les informations issue du RAG : {documents}"
+
+
     }
   }
 }
