@@ -1,6 +1,6 @@
 import os
 from email.headerregistry import UnstructuredHeader
-import json
+
 from langchain_community.document_loaders import PyPDFLoader, BSHTMLLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma
@@ -47,9 +47,22 @@ for nom_fichier in os.listdir(DOSSIER_SRC):
         try:
             loader = BSHTMLLoader(chemin_fichier)
             tous_les_chunks.extend(text_splitter.split_documents(loader.load()))
+            from langchain_core.documents import Document
+            from bs4 import BeautifulSoup
+            # 1. On ouvre et on lit le fichier nous-mêmes en forçant l'UTF-8
+            with open(chemin_fichier, "r", encoding="utf-8", errors="ignore") as f:
+                contenu_html = f.read()
+            # 2. On utilise BeautifulSoup pour nettoyer le HTML et extraire le texte propre
+            soup = BeautifulSoup(contenu_html, "html.parser")
+            texte_propre = soup.get_text(separator=" ")
+            # 3. On extrait le titre de la page pour les métadonnées (comme le faisait BSHTMLLoader)
+            titre = soup.title.string if soup.title else nom_fichier
+            # 4. On encapsule le tout dans un objet Document standard de LangChain
+            document_nettoye = [Document(page_content=texte_propre, metadata={"source": nom_fichier, "title": titre})]
+            # 5. On découpe et on ajoute aux chunks
+            tous_les_chunks.extend(text_splitter.split_documents(document_nettoye))
         except Exception as e:
             print(f"    [Erreur] Impossible de lire le HTML {nom_fichier} : {e}")
-
     else :
         print(f" -> Traitement (Mode Texte Brut) : {nom_fichier}")
         try:
