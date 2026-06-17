@@ -28,8 +28,9 @@ import {
   BookOpenText,
   Smile,
 } from "lucide-react";
+import { toast, Toaster } from "sonner";
 
-// ─── helper: extraire le texte brut d'un message (ThreadMessage ou MongoDB brut) ────
+// ????????? helper: extraire le texte brut d'un message (ThreadMessage ou MongoDB brut) ????????????
 function extractText(msg: any): string {
   if (!msg?.content) return "";
   if (typeof msg.content === "string") return msg.content;
@@ -42,7 +43,7 @@ function extractText(msg: any): string {
   return JSON.stringify(msg.content);
 }
 
-// ─── helper: convertir messages MongoDB ➜ format UIMessage pour AI SDK v6 ────────
+// ????????? helper: convertir messages MongoDB ??? format UIMessage pour AI SDK v6 ????????????????????????
 function mongoToUIMessages(raw: any[]): any[] {
   return raw.map((m: any, i: number) => ({
     id: m._id?.toString() ?? `hist-${i}`,
@@ -66,7 +67,7 @@ function mongoToUIMessages(raw: any[]): any[] {
   }));
 }
 
-// ─── PDF Printer ─────────────────────────────────────────────────────────────
+// ????????? PDF Printer ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 function printPDF(
   messages: any[],
   meta: {
@@ -80,12 +81,12 @@ function printPDF(
     (m: any) => m.role === "user" || m.role === "assistant",
   );
   if (filtered.length === 0) {
-    alert("Aucun message à exporter.");
+    toast.warning("Aucun message ?? exporter.");
     return;
   }
   const pw = window.open("", "_blank");
   if (!pw) {
-    alert("Veuillez autoriser les popups pour imprimer.");
+    toast.error("Veuillez autoriser les popups pour imprimer.");
     return;
   }
   const dateStr = new Date().toLocaleDateString("fr-FR", {
@@ -98,7 +99,7 @@ function printPDF(
   });
   const html = filtered
     .map((m: any) => {
-      const role = m.role === "user" ? "Élève" : "Assistant (IA)";
+      const role = m.role === "user" ? "??l??ve" : "Assistant (IA)";
       const cls = m.role === "user" ? "user-msg" : "assistant-msg";
       const text = extractText(m).replace(/\n/g, "<br/>");
       return `<div class="message ${cls}"><div class="role">${role}</div><div class="body">${text}</div></div>`;
@@ -121,7 +122,7 @@ function printPDF(
   <div class="info">
     Date : ${dateStr}<br/>
     Session : ${meta.sessionTitle ?? "Discussion libre"}<br/>
-    Niveau : ${meta.level ?? "—"} ${meta.mathLevel ? `| MATH : ${meta.mathLevel}` : ""}
+    Niveau : ${meta.level ?? "???"} ${meta.mathLevel ? `| MATH : ${meta.mathLevel}` : ""}
   </div>
   ${html}
   <div class="no-print">
@@ -134,9 +135,9 @@ function printPDF(
   pw.document.close();
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 // StudentChatInner: runs INSIDE <AssistantRuntimeProvider> to access thread
-// ═══════════════════════════════════════════════════════════════════════════════
+// ?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 function StudentChatInner({
   user,
   session,
@@ -381,7 +382,7 @@ function StudentChatInner({
               </div>
             ) : (
               <div className="flex h-64 flex-col items-center justify-center rounded-3xl border-4 border-dashed border-zinc-300 bg-zinc-50 text-zinc-400">
-                <div className="text-5xl opacity-30 grayscale">📂</div>
+                <div className="text-5xl opacity-30 grayscale">📭</div>
                 <p className="mt-4 font-bold tracking-widest uppercase">
                   Aucun document disponible pour votre cycle
                 </p>
@@ -390,7 +391,7 @@ function StudentChatInner({
 
             <div className="mt-8 rounded-3xl border-4 border-black bg-yellow-100 p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <h3 className="mb-2 font-black tracking-tight uppercase">
-                💡 Objectif pédagogique
+                🎯 Objectif pédagogique
               </h3>
               <p className="text-lg leading-relaxed font-medium">
                 {session?.objective ?? "Apprendre et progresser avec l'IA."}
@@ -506,7 +507,7 @@ function StudentChatContent({
       title: "Discussion libre",
       objective: "Apprendre et progresser avec l'IA.",
       exerciseDocuments: [],
-      subject: "Général",
+      subject: "Géneral",
     };
     return [freeDiscussion, ...assigned];
   }, [user.studentData?.sessionIds]);
@@ -629,7 +630,7 @@ function StudentChatContent({
       <div className="flex h-screen flex-col bg-white font-sans text-black">
         <header className="flex items-center justify-between border-b-4 border-black bg-yellow-400 p-3 shadow-md md:p-5">
           <div className="flex items-center gap-3 md:gap-5">
-            <div className="text-3xl md:text-5xl">🎓</div>
+            <div className="text-3xl md:text-5xl">👋</div>
             <div>
               <h1 className="text-base font-black tracking-tight uppercase md:text-2xl">
                 Bonjour {user.studentData?.firstName} !
@@ -653,7 +654,7 @@ function StudentChatContent({
                     className="group flex items-center gap-2 rounded-lg border-2 border-black bg-white px-2 py-1 transition-all hover:bg-zinc-50 active:translate-y-0.5 md:gap-3 md:rounded-xl md:px-4 md:py-2"
                   >
                     <span className="text-sm md:text-lg">
-                      {session?._id === "free-discussion" ? "💬" : "🏫"}
+                      {session?._id === "free-discussion" ? "💬" : "📚"}
                     </span>
                     <div className="flex flex-col items-start leading-none md:leading-tight">
                       <span className="hidden text-[8px] font-black tracking-widest text-zinc-400 uppercase md:block md:text-[10px]">
@@ -705,7 +706,7 @@ function StudentChatContent({
                                   <span
                                     className={`text-[9px] font-bold ${activeSessionId === s._id ? "text-zinc-400" : "text-zinc-500"}`}
                                   >
-                                    {s.subject || "Général"}
+                                    {s.subject || "Géneral"}
                                   </span>
                                 </div>
                                 {activeSessionId === s._id && (
@@ -730,7 +731,7 @@ function StudentChatContent({
                 onClick={handlePrint}
                 className="rounded-lg bg-blue-600 px-3 py-2 text-[10px] font-black text-white shadow transition hover:bg-blue-700 md:rounded-2xl md:px-6 md:py-3 md:text-base"
               >
-                📄 IMPRIMER
+                🖨️ IMPRIMER
               </button>
             )}
             <button
@@ -833,14 +834,17 @@ export default function StudentChat() {
     );
 
   return (
-    <StudentChatContent
-      key={activeSessionId || "default"}
-      initialMessages={initialMessages ?? []}
-      historyThreads={historyThreads}
-      activeSessionId={activeSessionId}
-      setActiveSessionId={handleSessionChange}
-      user={{ ...user, studentData: currentUserData }}
-      logout={logout}
-    />
+    <>
+      <StudentChatContent
+        key={activeSessionId || "default"}
+        initialMessages={initialMessages ?? []}
+        historyThreads={historyThreads}
+        activeSessionId={activeSessionId}
+        setActiveSessionId={handleSessionChange}
+        user={{ ...user, studentData: currentUserData }}
+        logout={logout}
+      />
+      <Toaster position="top-right" richColors />
+    </>
   );
 }
