@@ -28,11 +28,25 @@ export async function POST(request: Request) {
     await writeFile(path, buffer);
 
     const fileUrl = `/uploads/${filename}`;
+    let content = "";
+
+    try {
+      if (file.name.toLowerCase().endsWith(".pdf")) {
+        const pdfParse = (await import("pdf-parse")).default;
+        const pdfData = await pdfParse(buffer);
+        content = pdfData.text;
+      } else if (file.name.toLowerCase().endsWith(".txt")) {
+        content = buffer.toString("utf-8");
+      }
+    } catch (parseError) {
+      console.error("Error parsing document text:", parseError);
+    }
 
     return NextResponse.json({
       success: true,
       url: fileUrl,
       name: file.name,
+      content,
     });
   } catch (error) {
     console.error("Upload error:", error);

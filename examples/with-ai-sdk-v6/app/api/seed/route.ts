@@ -22,6 +22,7 @@ export async function GET() {
         subject: "Mathématiques",
         mathLevel: "<6ème",
         createdBy: "TEACHER_ADMIN",
+        documents: [],
       },
       {
         title: "Introduction à la Physique",
@@ -29,6 +30,7 @@ export async function GET() {
         subject: "Physique",
         mathLevel: "3ème",
         createdBy: "TEACHER_ADMIN",
+        documents: [],
       },
     ]);
 

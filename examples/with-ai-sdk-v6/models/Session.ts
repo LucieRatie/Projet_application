@@ -23,7 +23,8 @@ const SessionSchema = new mongoose.Schema({
       "Terminale",
     ],
   },
-  documents: [{ name: String, url: String }],
+  aiDocuments: [{ name: String, url: String, content: String }],
+  exerciseDocuments: [{ name: String, url: String }],
   createdBy: String,
   createdAt: { type: Date, default: Date.now },
 });

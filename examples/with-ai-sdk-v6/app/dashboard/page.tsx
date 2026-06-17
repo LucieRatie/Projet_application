@@ -692,6 +692,29 @@ function StudentCard({
             <h3 className="mb-4 text-xl font-black text-zinc-900 uppercase">
               Description
             </h3>
+            <button
+              className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-purple-100 py-3 font-bold text-purple-700 shadow-sm transition hover:bg-purple-200"
+              onClick={async (e) => {
+                e.stopPropagation();
+                try {
+                  const res = await fetch("/api/evaluate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ studentId: student.studentId }),
+                  });
+                  const data = await res.json();
+                  if (data.evaluation) {
+                    setLocalDescription(data.evaluation);
+                  } else {
+                    alert("Erreur lors de l'évaluation");
+                  }
+                } catch (err) {
+                  alert("Erreur serveur");
+                }
+              }}
+            >
+              <span>✨</span> Évaluer l'élève avec l'IA
+            </button>
             <textarea
               className="mb-4 h-40 w-full resize-none rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-900 shadow-sm transition-all outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
               value={localDescription}
@@ -973,9 +996,10 @@ function SessionManager({ students, sessions, refresh }: any) {
   const [formData, setFormData] = useState({
     title: "",
     objective: "",
-    subject: "Mathématiques",
-    mathLevel: "<6ème",
-    documents: [] as { name: string; url: string }[],
+    subject: "Général",
+    mathLevel: "CP",
+    aiDocuments: [] as { name: string; url: string; content?: string }[],
+    exerciseDocuments: [] as { name: string; url: string }[],
   });
 
   const [isUploading, setIsUploading] = useState(false);
@@ -995,23 +1019,28 @@ function SessionManager({ students, sessions, refresh }: any) {
       setFormData({
         title: editingSession.title,
         objective: editingSession.objective,
-        subject: editingSession.subject,
-        mathLevel: editingSession.mathLevel || "<6ème",
-        documents: editingSession.documents || [],
+        subject: editingSession.subject || "Général",
+        mathLevel: editingSession.mathLevel || "CP",
+        aiDocuments: editingSession.aiDocuments || [],
+        exerciseDocuments: editingSession.exerciseDocuments || [],
       });
       setShowAdd(true);
     } else {
       setFormData({
         title: "",
         objective: "",
-        subject: "Mathématiques",
-        mathLevel: "<6ème",
-        documents: [],
+        subject: "Général",
+        mathLevel: "CP",
+        aiDocuments: [],
+        exerciseDocuments: [],
       });
     }
   }, [editingSession]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "ai" | "exercise",
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -1028,7 +1057,19 @@ function SessionManager({ students, sessions, refresh }: any) {
       if (data.success) {
         setFormData((prev) => ({
           ...prev,
-          documents: [...prev.documents, { name: data.name, url: data.url }],
+          ...(type === "ai"
+            ? {
+                aiDocuments: [
+                  ...prev.aiDocuments,
+                  { name: data.name, url: data.url, content: data.content },
+                ],
+              }
+            : {
+                exerciseDocuments: [
+                  ...prev.exerciseDocuments,
+                  { name: data.name, url: data.url },
+                ],
+              }),
         }));
       } else {
         alert("Upload failed: " + data.error);
@@ -1175,27 +1216,6 @@ function SessionManager({ students, sessions, refresh }: any) {
             <p className="mb-4 text-sm leading-relaxed text-zinc-500">
               {s.objective}
             </p>
-
-            {s.documents && s.documents.length > 0 && (
-              <div className="mb-4">
-                <label className="mb-1 block text-[10px] font-black text-zinc-400 uppercase">
-                  Documents
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {s.documents.map((doc: any, idx: number) => (
-                    <a
-                      key={idx}
-                      href={doc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded border border-zinc-200 bg-zinc-100 px-2 py-1 text-[10px] text-blue-600 hover:bg-blue-50 hover:underline"
-                    >
-                      📄 {doc.name}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
 
             <div className="flex items-center justify-between">
               <div className="flex flex-col gap-1">
@@ -1441,67 +1461,104 @@ function SessionManager({ students, sessions, refresh }: any) {
                 ))}
               </select>
 
-              <div className="rounded-xl border border-zinc-200 bg-white p-4">
-                <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
-                  Documents de la session
-                </label>
-                <div className="mb-4 space-y-2">
-                  {formData.documents.map((doc, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between rounded-lg bg-zinc-100 p-2 text-xs text-zinc-700"
-                    >
-                      <span className="truncate pr-4">📄 {doc.name}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            documents: formData.documents.filter(
-                              (_, i) => i !== idx,
-                            ),
-                          })
-                        }
-                        className="text-red-500 hover:text-red-400"
-                      >
-                        ✕
-                      </button>
+              <div className="mb-8 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
+                      Documents de contexte (Pour l'IA)
+                    </label>
+                    <div className="mb-4 space-y-2">
+                      {formData.aiDocuments.map((doc, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between rounded-lg bg-zinc-100 p-2 text-xs text-zinc-700"
+                        >
+                          <span className="truncate pr-4">📄 {doc.name}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                aiDocuments: formData.aiDocuments.filter(
+                                  (_, i) => i !== idx,
+                                ),
+                              })
+                            }
+                            className="text-red-500 hover:text-red-400"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-
-                <div className="relative">
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="file-upload"
-                    disabled={isUploading}
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed p-4 transition-all ${
-                      isUploading
-                        ? "cursor-not-allowed border-zinc-700 bg-zinc-900 opacity-50"
-                        : "border-zinc-700 hover:border-blue-500 hover:bg-blue-500/10"
-                    }`}
-                  >
-                    {isUploading ? (
-                      <>
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-500 border-t-blue-500" />
-                        <span className="text-xs font-bold text-zinc-500 uppercase">
-                          Téléchargement...
-                        </span>
-                      </>
-                    ) : (
-                      <>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        onChange={(e) => handleFileUpload(e, "ai")}
+                        className="hidden"
+                        id="file-upload-ai"
+                        disabled={isUploading}
+                      />
+                      <label
+                        htmlFor="file-upload-ai"
+                        className={`flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed p-4 transition-all ${isUploading ? "cursor-not-allowed border-zinc-700 bg-zinc-900 opacity-50" : "border-zinc-700 hover:border-blue-500 hover:bg-blue-500/10"}`}
+                      >
                         <span className="text-xl">📁</span>
-                        <span className="text-xs font-bold text-zinc-400 uppercase">
-                          Ajouter un fichier (PDF, Word, Image...)
+                        <span className="text-center text-xs font-bold text-zinc-400 uppercase">
+                          Ajouter pour l'IA
                         </span>
-                      </>
-                    )}
-                  </label>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[10px] font-black text-zinc-500 uppercase">
+                      Fichiers d'exercices (Pour les élèves)
+                    </label>
+                    <div className="mb-4 space-y-2">
+                      {formData.exerciseDocuments.map((doc, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between rounded-lg bg-zinc-100 p-2 text-xs text-zinc-700"
+                        >
+                          <span className="truncate pr-4">📄 {doc.name}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFormData({
+                                ...formData,
+                                exerciseDocuments:
+                                  formData.exerciseDocuments.filter(
+                                    (_, i) => i !== idx,
+                                  ),
+                              })
+                            }
+                            className="text-red-500 hover:text-red-400"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        onChange={(e) => handleFileUpload(e, "exercise")}
+                        className="hidden"
+                        id="file-upload-ex"
+                        disabled={isUploading}
+                      />
+                      <label
+                        htmlFor="file-upload-ex"
+                        className={`flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed p-4 transition-all ${isUploading ? "cursor-not-allowed border-zinc-700 bg-zinc-900 opacity-50" : "border-zinc-700 hover:border-blue-500 hover:bg-blue-500/10"}`}
+                      >
+                        <span className="text-xl">📁</span>
+                        <span className="text-center text-xs font-bold text-zinc-400 uppercase">
+                          Ajouter Exercice
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1601,7 +1658,7 @@ function ThreadViewerInner({ thread }: { thread: any }) {
           📄 Imprimer / PDF
         </button>
       </div>
-      <div className="relative flex-1 bg-white">
+      <div className="relative flex-1 overflow-y-auto bg-white">
         <Thread />
       </div>
     </div>

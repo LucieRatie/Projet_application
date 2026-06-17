@@ -504,8 +504,8 @@ function StudentChatContent({
     const freeDiscussion = {
       _id: "free-discussion",
       title: "Discussion libre",
-      objective: "Apprendre et progresser với l'IA.",
-      documents: [],
+      objective: "Apprendre et progresser avec l'IA.",
+      exerciseDocuments: [],
       subject: "Général",
     };
     return [freeDiscussion, ...assigned];
@@ -517,7 +517,7 @@ function StudentChatContent({
 
   // Student sees documents from the active session
   const visibleDocuments = useMemo(() => {
-    return session?.documents || [];
+    return session?.exerciseDocuments || [];
   }, [session]);
 
   const sdkInitialMessages = useMemo(
@@ -526,6 +526,10 @@ function StudentChatContent({
   );
 
   const runtime = useChatRuntime({
+    api: "/api/chat",
+    body: {
+      aiDocuments: session?.aiDocuments || [],
+    },
     messages: sdkInitialMessages,
   });
 
