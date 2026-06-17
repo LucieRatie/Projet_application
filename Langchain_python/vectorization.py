@@ -45,8 +45,6 @@ for nom_fichier in os.listdir(DOSSIER_SRC):
     elif nom_fichier.endswith(".htm") or nom_fichier.endswith(".html"):
         print(f" -> Traitement HTML : {nom_fichier}")
         try:
-            loader = BSHTMLLoader(chemin_fichier)
-            tous_les_chunks.extend(text_splitter.split_documents(loader.load()))
             from langchain_core.documents import Document
             from bs4 import BeautifulSoup
             # 1. On ouvre et on lit le fichier nous-mêmes en forçant l'UTF-8
