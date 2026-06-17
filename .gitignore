@@ -9,3 +9,5 @@ Langchain_python/RAG_SANSdata
 *.pyc
 *.bin
 
+*.txt
+/.idea
