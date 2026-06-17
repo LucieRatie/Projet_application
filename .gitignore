@@ -1,3 +1,7 @@
 /BDD_test
 /Ressources_init
 Langchain_python/.env
+Langchain_python/.idea
+*.pyc
+*.bin
+*.sqlite3

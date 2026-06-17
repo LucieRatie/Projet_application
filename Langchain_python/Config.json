@@ -1,0 +1,15 @@
+{
+  "settings": {
+    "online": 1,
+    "temperature": 0.3
+  },
+  "prompts": {
+    "reformulation": {
+      "system": "Reformule la question de l'utilisateur pour faire une requete RAG, ta reponse servira de prompt pour la requete RAG ne raconte pas ta vie",
+      "user": "{question}"
+    },
+    "Reponse": {
+      "system": "Tu es un météorologue. Réponds à la question en t'appuyant uniquement sur les documents suivants :\n\n{documents}"
+    }
+  }
+}

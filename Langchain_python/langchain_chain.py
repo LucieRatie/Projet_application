@@ -1,60 +1,82 @@
 import os
 from copyreg import constructor
 
+import json
+from distutils.command.config import config
+
 from Query import search_in_database
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.llms import Ollama
 from langchain_core.prompts import ChatPromptTemplate
 
-# 1. Charger le .env la clef api google est dessus ça évite de la mettre en publique
-load_dotenv()
-
-#2. Initialisation du modèle
-def get_model(online):
-    if online:
+def get_model(is_online, temperature):
+    if is_online:
+        print("🤖 Initialisation de Gemini (Online)...")
         model = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
-            temperature=0.3,
+            temperature=temperature,
         )
     else :
+        print("🦙 Initialisation de Ollama/Llama3 (Local)...")
         model = Ollama(
             model="llama3",
-            temperature=0.3,
+            temperature=temperature,
             maxRetries=3,
             baseUrl="http://localhost:11434",
         )
     return model
 
+def main(question_eleve):
+    # 1. Charger le .env la clef api google est dessus ça évite de la mettre en publique
+    load_dotenv()
 
-# 4. Orchestration
-question_eleve = get_prompt_eleve() #Prochainement JS navigateur
+    # 2. Initialisation du modèle
+    with open("Config.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
 
-prompt_template1 = ChatPromptTemplate.from_messages([
-    ("user", "{question}"),
-    ("system", "Reformule la question de l'utilisateur pour faire une requete RAG, ta reponse servira de prompt pour la requete RAG ne raconte pas ta vie")
-])
+        # Extraction des variables de configuration
+    is_online = config["settings"]["online"]
+    temperature = config["settings"]["temperature"]
 
-# 5. Assemblage et exécution
-chain1 = prompt_template1 | model
+    model = get_model(is_online, temperature)
 
-print("question_eleve",question_eleve)
-print("Envoi de la requête à Gemini pour reformulation...\n")
-prompt = chain1.invoke({"question": question_eleve})
-print("prompt",prompt)
+    # 4.1 Creation du prompt pour reformulation
+    prompt_config = config["prompts"]["reformulation"]
+    prompt_template1 = ChatPromptTemplate.from_messages([
+        ("user", prompt_config["user"]),
+        ("system", prompt_config["system"]),
+    ])
 
-context_db = search_in_database(prompt.content) #Query.py
-print("context_db",context_db)
+    # 4.2 Assemblage et initalisation du prompt
+    chain1 = prompt_template1 | model
 
-prompt_template2 = ChatPromptTemplate.from_messages([
-    ("system", "Tu es un météorologue. Réponds à la question en t'appuyant uniquement sur les documents suivants :\n\n{documents}"),
-    ("user", "{question}")
-])
 
-# 5. Assemblage et exécution
-chain2 = prompt_template2 | model
+    print("question_eleve", question_eleve)
+    print("Envoi de la requête à Gemini pour reformulation...\n")
+    prompt = chain1.invoke({"question": question_eleve})
+    print("prompt",prompt)
 
-print("Envoi de la demande à Gemini...\n")
-response = chain2.invoke({"documents": context_db, "question": question_eleve})
+    # 5.1 Préparation des données pour le 2e propt
+    context_db = search_in_database(prompt.content) #Query.py
+    print("context_db", context_db)
 
-print(response.content)
+    prompt_config2 = config["prompts"]["Reponse"]
+    prompt_template2 = ChatPromptTemplate.from_messages([
+        ("system", prompt_config2["system"]),
+        ("user", prompt_config["user"])
+    ])
+
+    # 5.2 Assemblage et exécution
+    chain2 = prompt_template2 | model
+
+
+    print("Envoi de la demande à Gemini...\n")
+    response = chain2.invoke({"documents": context_db, "question": question_eleve})
+
+    print(response.content)
+
+#Prochainement JS navigateur
+question_eleve="Quelles sera la météo de San Francisco demain ? Quelle est la température maximale à Toulouse ? Quel temps fait-il à Paris ?";
+
+main(question_eleve)
