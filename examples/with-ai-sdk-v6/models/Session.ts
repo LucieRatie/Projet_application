@@ -7,6 +7,7 @@ const SessionSchema = new mongoose.Schema({
   mathLevel: {
     type: String,
     enum: [
+      "<6ème",
       "CP",
       "CE1",
       "CE2",
@@ -16,6 +17,7 @@ const SessionSchema = new mongoose.Schema({
       "5ème",
       "4ème",
       "3ème",
+      ">3ème",
       "2nde",
       "1ère",
       "Terminale",
