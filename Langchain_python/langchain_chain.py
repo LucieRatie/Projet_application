@@ -1,19 +1,30 @@
 import os
+from copyreg import constructor
+
 from Query import search_in_database
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.llms import Ollama
 from langchain_core.prompts import ChatPromptTemplate
-#"Tu dois reformuler {question} pour faire la requête que j'enverrai immédiatement pour interroger la base de donnée"
 
-
-# 1. Charger le .env que l'on vient de créer de force
+# 1. Charger le .env la clef api google est dessus ça évite de la mettre en publique
 load_dotenv()
-# 2. Initialiser le modèle
-model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.3)
 
-# 3. Les données à consulter (RAG)
-def get_prompt_eleve():
-    return "Quelles sera la météo de San Francisco demain ? Quelle est la température maximale à Toulouse ? Quel temps fait-il à Paris ?"
+#2. Initialisation du modèle
+def get_model(online):
+    if online:
+        model = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            temperature=0.3,
+        )
+    else :
+        model = Ollama(
+            model="llama3",
+            temperature=0.3,
+            maxRetries=3,
+            baseUrl="http://localhost:11434",
+        )
+    return model
 
 
 # 4. Orchestration
