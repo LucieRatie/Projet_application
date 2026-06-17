@@ -1,4 +1,4 @@
-import { config } from './config.js';
+import { config } from './config.mjs';
 import { generateText, streamText } from 'ai';
 import { google } from '@ai-sdk/google';
 import { createOllama } from 'ollama-ai-provider';

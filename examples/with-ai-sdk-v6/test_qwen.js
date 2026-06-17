@@ -1,6 +1,6 @@
 // test.js
 import { init_chat, invoke, get_discussion } from '../../qwen_js/main.js';
-import { config } from '../../qwen_js/config.js';
+import { config } from '../../qwen_js/config.mjs';
 
 async function runTest() {
     console.log(`=== Démarrage du test (Mode En ligne: ${config.ONLINE_MODE}) ===\n`);
