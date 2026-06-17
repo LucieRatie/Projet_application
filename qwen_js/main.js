@@ -1,74 +1,100 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { OllamaLLM } from "@langchain/ollama";
-import dotenv from "dotenv";
+import { config } from './config.js';
+import { generateText, streamText } from 'ai';
+import { google } from '@ai-sdk/google';
+import { createOllama } from 'ollama-ai-provider';
 
-/**
- * Vectorise et stocke une liste de fichiers dans la base de données RAG.
- *
- * @param {string[]} list_file_path - Liste des chemins d'accès aux fichiers à indexer.
- * @returns {void} Ne retourne aucune valeur.
+// Initialisation du provider Ollama local
+const ollama = createOllama({
+    baseURL: 'http://localhost:11434/api',
+});
+
+// Variable globale (ou d'état) pour stocker le prompt système configuré par init_chat
+let currentSystemPrompt = "";
+// Variable globale pour stocker l'historique local si non géré par le useChat du client
+let conversationHistory = [];
+
+/** * Vectorise et stocke une liste de fichiers dans la base de données RAG.
  */
-function add_context(list_file_path) {
-    // Vectoriser les fichiers
-}
-
-/**
- * Configure et prépare l'IA (système, contexte et variables) avant de démarrer l'échange avec l'élève.
- *
- * @param {string} objective - L'objectif pédagogique de la session.
- * @param {string} name - Le nom de l'élève.
- * @param {string} french_level - Le niveau de l'élève en français.
- * @param {string} math_level - Le niveau de l'élève en mathématiques.
- * @param {string} resume - Le résumé du profil ou de l'historique généré par Llama.
- * @returns {void} Ne retourne aucune valeur.
- */
-function init_chat(objective, name, french_level, math_level, resume) {
-    // Il faut faire un prompt system avec tous les elements
-    
-
-}
-
-/**
- * Envoie le prompt de l'élève au modèle Qwen et récupère sa réponse générée.
- *
- * @param {string} prompt - Le message ou la question de l'élève.
- * @returns {string} La réponse textuelle générée par le modèle Qwen.
- */
-function invoke(prompt) {
-    //reformuler le prompt
-    //interroger le rag
-    //repondre avec prompt + reponse RAG+ historique
-}
-
-/**
- * Récupère l'historique complet des messages échangés au cours de la discussion.
- *
- * @returns {Array<{role: string, content: string}>} Liste des messages de la discussion (format standard type OpenAI/Qwen).
- */
-function get_discussion() {
-    // retourner l'ensemble [{role:"user",content:"je ne comprend pas..."}]
-}
-
-//Initialisation dotenv
-dotenv.config();
-
-export function getModel(isOnline, temperature) {
-    let model;
-    if (is_online) {
-        console.log("🤖 Initialisation de Gemini (Online)...")
-        model = new ChatGoogleGenerativeAI({
-            modelName: "gemini-2.5-flash",
-            temperature: temperature,
+export async function add_context(list_file_path) {
+    try {
+        const response = await fetch(`${config.RAG_SERVER_URL}/vectorize`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ filePaths: list_file_path })
         });
+        if (!response.ok) throw new Error("Erreur lors de la vectorisation");
+        console.log("Fichiers vectorisés avec succès dans le RAG.");
+    } catch (error) {
+        console.error("Erreur add_context:", error);
     }
-    else {
-        console.log("🦙 Initialisation de Ollama/Llama3 (Local)...")
-        model = new OllamaLLM({
-            modelName:"qwen-no-think",
-            temperature: temperature,
-            maxRetries:3,
-            baseUrl:"http://localhost:11434"
+}
+
+/** * Configure et prépare l'IA avant de démarrer l'échange.
+ */
+export function init_chat(objective, name, french_level, math_level, resume) {
+    // Génération du prompt système à partir de la configuration
+    currentSystemPrompt = config.prompts.systemInit(objective, name, french_level, math_level, resume);
+    // Réinitialisation de l'historique pour une nouvelle session
+    conversationHistory = [{ role: 'system', content: currentSystemPrompt }];
+    console.log("Chat initialisé avec succès.");
+}
+
+/** * Envoie le prompt, interroge le RAG et retourne le flux de streaming (streamText)
+ */
+export async function invoke(userPrompt) {
+    // 1. Sélection du modèle selon le mode choisi dans la config
+    const model = config.ONLINE_MODE
+        ? google('gemini-1.5-pro') // Utilise automatiquement process.env.GOOGLE_GENERATIVE_AI_API_KEY
+        : ollama('qwen3.5');       // Modèle local Ollama
+
+    // 2. Reformulation du prompt & interrogation du RAG
+    let ragContext = "";
+    try {
+        const reformulationPrompt = config.prompts.ragReformulation(userPrompt, conversationHistory);
+        const { text: optimizedQuery } = await generateText({
+            model: model,
+            prompt: reformulationPrompt,
         });
+
+        // Requête au serveur RAG pour obtenir du contexte
+        const ragResponse = await fetch(`${config.RAG_SERVER_URL}/search?q=${encodeURIComponent(optimizedQuery)}`);
+        if (ragResponse.ok) {
+            const data = await ragResponse.json();
+            ragContext = data.context; // On suppose que le serveur renvoie { context: "..." }
+        }
+    } catch (e) {
+        console.warn("Impossible de joindre le RAG, continuation sans contexte.", e);
     }
-    return model;
+
+    // 3. Construction des messages pour le modèle
+    // On ajoute le message de l'utilisateur enrichi avec le contexte du RAG
+    const augmentedPrompt = ragContext
+        ? `[Contexte issu de la base de connaissances : ${ragContext}]\n\nQuestion de l'élève : ${userPrompt}`
+        : userPrompt;
+
+    // On met à jour l'historique local avant l'envoi
+    conversationHistory.push({ role: 'user', content: userPrompt });
+
+    // 4. Appel en mode Streaming natif du Vercel AI SDK
+    const result = await streamText({
+        model: model,
+        system: currentSystemPrompt,
+        messages: conversationHistory.slice(1).URIencode ? conversationHistory.slice(1) : conversationHistory,
+        // Note: Vercel AI SDK préfère recevoir l'historique épuré du prompt système initial s'il est passé dans l'option 'system'
+        prompt: augmentedPrompt,
+        onFinish({ text }) {
+            // Une fois le stream terminé, on stocke la réponse finale dans notre historique local
+            conversationHistory.push({ role: 'assistant', content: text });
+        }
+    });
+
+    // Retourne l'objet de stream complet (utilisable avec toUIMessageStreamResponse() dans Next.js)
+    return result;
+}
+
+/** * Récupère l'historique complet des messages échangés.
+ */
+export function get_discussion() {
+    // Filtre pour ne retourner que les messages échangés (User & Assistant) au format standard
+    return conversationHistory.filter(msg => msg.role !== 'system');
 }
