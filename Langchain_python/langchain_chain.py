@@ -20,7 +20,7 @@ def get_model(is_online, temperature):
         print("🦙 Initialisation de Ollama/Llama3 (Local)...")
         from langchain_ollama import OllamaLLM
         model = OllamaLLM(
-            model="fredrezones55/Qwen3.5-Uncensored-HauhauCS-Aggressive:9b",
+            model="qwen-no-think",
             temperature=temperature,
             max_retries=3,
             base_url="http://localhost:11434"

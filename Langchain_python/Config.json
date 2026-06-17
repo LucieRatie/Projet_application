@@ -1,6 +1,6 @@
 {
   "settings": {
-    "online": 1,
+    "online": 0,
     "temperature": 0.3
   },
   "prompts": {
