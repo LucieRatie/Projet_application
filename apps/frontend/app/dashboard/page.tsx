@@ -615,34 +615,6 @@ function StudentCard({
         </div>
       </div>
 
-      <div className="mb-6 rounded-xl border border-zinc-100 bg-zinc-50 p-4">
-        <label className="mb-3 block text-[10px] font-black tracking-widest text-zinc-500 uppercase">
-          Compétences (AI)
-        </label>
-        <div className="space-y-3">
-          <SkillBar
-            label="Vocabulaire"
-            value={student.skillsSummary?.vocabulary ?? 0}
-            color="bg-blue-500"
-          />
-          <SkillBar
-            label="Grammaire"
-            value={student.skillsSummary?.grammar ?? 0}
-            color="bg-purple-500"
-          />
-          <SkillBar
-            label="Compréhension"
-            value={student.skillsSummary?.comprehension ?? 0}
-            color="bg-emerald-500"
-          />
-          <SkillBar
-            label="Logique Math"
-            value={student.skillsSummary?.mathLogic ?? 0}
-            color="bg-amber-500"
-          />
-        </div>
-      </div>
-
       <div className="mb-6 flex flex-wrap gap-2">
         <LevelBadge label="LANG" value={localNativeLanguage} />
         <LevelBadge label="FR" value={student.frenchLevel} />
