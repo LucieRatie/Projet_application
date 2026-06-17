@@ -1,0 +1,60 @@
+---
+title: Quickstart
+description: Install tap and build your first resource.
+---
+
+## Install
+
+```sh
+npm install @assistant-ui/tap
+```
+
+## Define a resource
+
+A resource is a React component without the UI. Write a `use`-prefixed hook with
+the hooks you already know, imported from `"react"`, then wrap it with `resource`.
+
+```ts
+import { resource } from "@assistant-ui/tap";
+import { useState } from "react";
+
+const useCounter = () => {
+  const [count, setCount] = useState(0);
+  return { count, increment: () => setCount((c) => c + 1) };
+};
+
+const Counter = resource(useCounter);
+```
+
+Instead of JSX, a resource returns a plain value: the state and methods you want
+callers to use.
+
+## Use it in React
+
+`useResource` hosts a resource inside a React component. The component re-renders
+whenever the resource's state changes, and unmounts the resource when it unmounts.
+
+```tsx
+import { useResource } from "@assistant-ui/tap";
+
+function CounterButton() {
+  const { count, increment } = useResource(Counter());
+
+  return <button onClick={increment}>Count: {count}</button>;
+}
+```
+
+`resource()` turns a hook into a Resource; `useResource(Counter())` turns it back
+into a hook call. Calling the factory (`Counter()`) creates an inert element;
+`useResource` brings it to life.
+
+## Next steps
+
+<Cards>
+  <Card title="Hooks" href="/tap/docs/tap/hooks">
+    React's hooks inside resources, plus tap's additions.
+  </Card>
+  <Card title="Composition" href="/tap/docs/tap/composition">
+    Nest resources with useResource and useResources.
+  </Card>
+</Cards>

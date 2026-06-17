@@ -1,0 +1,14 @@
+{
+  "title": "Migrations",
+  "icon": "ArrowLeftRight",
+  "root": true,
+  "pages": [
+    "deprecation-policy",
+    "toolkit-tools",
+    "v0-11",
+    "v0-12",
+    "v0-14",
+    "react-langgraph-v0-7",
+    "react-compatibility"
+  ]
+}
