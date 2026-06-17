@@ -55,10 +55,12 @@ def main(question_eleve):
     print("question_eleve", question_eleve)
     print("Envoi de la requête à Gemini pour reformulation...\n")
     prompt = chain1.invoke({"question": question_eleve})
+    if is_online :
+        prompt=prompt.content
     print("prompt",prompt)
 
     # 5.1 Préparation des données pour le 2e propt
-    context_db = search_in_database(prompt.content) #Query.py
+    context_db = search_in_database(prompt) #Query.py
     print("context_db", context_db)
 
     prompt_config2 = config["prompts"]["Reponse"]
