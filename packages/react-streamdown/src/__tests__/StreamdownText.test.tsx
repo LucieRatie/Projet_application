@@ -1,0 +1,207 @@
+import { describe, it, expect, vi, afterEach } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { TextMessagePartProvider } from "@assistant-ui/react";
+import { StreamdownTextPrimitive } from "../primitives/StreamdownText";
+import type {
+  StreamdownTextComponents,
+  SyntaxHighlighterProps,
+  CodeHeaderProps,
+} from "../types";
+
+afterEach(cleanup);
+
+describe("StreamdownTextPrimitive", () => {
+  it("renders without a SmoothContextProvider", () => {
+    expect(() =>
+      render(
+        <TextMessagePartProvider text="hello" isRunning>
+          <StreamdownTextPrimitive />
+        </TextMessagePartProvider>,
+      ),
+    ).not.toThrow();
+  });
+
+  it("updates streamdown controls when the message completes", async () => {
+    const table = `| a | b |\n| - | - |\n| 1 | 2 |`;
+
+    const { container, rerender } = render(
+      <TextMessagePartProvider text={table} isRunning>
+        <StreamdownTextPrimitive />
+      </TextMessagePartProvider>,
+    );
+
+    expect(
+      container.querySelector("[data-status]")?.getAttribute("data-status"),
+    ).toBe("running");
+    expect(
+      ((await screen.findByTitle("Copy table")) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    expect(
+      ((await screen.findByTitle("Download table")) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+
+    rerender(
+      <TextMessagePartProvider text={table} isRunning={false}>
+        <StreamdownTextPrimitive />
+      </TextMessagePartProvider>,
+    );
+
+    expect(
+      container.querySelector("[data-status]")?.getAttribute("data-status"),
+    ).toBe("complete");
+    expect(
+      ((await screen.findByTitle("Copy table")) as HTMLButtonElement).disabled,
+    ).toBe(false);
+    expect(
+      ((await screen.findByTitle("Download table")) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+  });
+
+  it("settles on the latest text when defer is enabled", async () => {
+    const { rerender } = render(
+      <TextMessagePartProvider text="first chunk" isRunning>
+        <StreamdownTextPrimitive defer />
+      </TextMessagePartProvider>,
+    );
+
+    expect(await screen.findByText("first chunk")).toBeTruthy();
+
+    rerender(
+      <TextMessagePartProvider text="first chunk second chunk" isRunning>
+        <StreamdownTextPrimitive defer />
+      </TextMessagePartProvider>,
+    );
+
+    expect(await screen.findByText("first chunk second chunk")).toBeTruthy();
+
+    rerender(
+      <TextMessagePartProvider
+        text="first chunk second chunk"
+        isRunning={false}
+      >
+        <StreamdownTextPrimitive defer />
+      </TextMessagePartProvider>,
+    );
+
+    expect(await screen.findByText("first chunk second chunk")).toBeTruthy();
+  });
+
+  it("renders settled text in full when smooth is enabled", async () => {
+    render(
+      <TextMessagePartProvider text="hello smooth" isRunning={false}>
+        <StreamdownTextPrimitive smooth />
+      </TextMessagePartProvider>,
+    );
+
+    expect(await screen.findByText("hello smooth")).toBeTruthy();
+  });
+
+  it("accepts a SmoothOptions object and keeps data-status smooth-aware", async () => {
+    const { container } = render(
+      <TextMessagePartProvider text="tuned reveal" isRunning={false}>
+        <StreamdownTextPrimitive
+          smooth={{ drainMs: 500, maxCharsPerFrame: 30 }}
+        />
+      </TextMessagePartProvider>,
+    );
+
+    expect(await screen.findByText("tuned reveal")).toBeTruthy();
+    expect(
+      container.querySelector("[data-status]")?.getAttribute("data-status"),
+    ).toBe("complete");
+  });
+
+  describe("code adapter with custom components", () => {
+    const fencedMarkdown = "```ts\nconst x = 1;\n```";
+
+    it("renders without throwing when SyntaxHighlighter is provided", () => {
+      const SyntaxHighlighter = vi.fn(
+        ({ code, language }: SyntaxHighlighterProps) => (
+          <div data-testid="highlighter">{`${language}:${code}`}</div>
+        ),
+      );
+      const components = {
+        SyntaxHighlighter,
+      } as unknown as StreamdownTextComponents;
+
+      expect(() =>
+        render(
+          <TextMessagePartProvider text={fencedMarkdown} isRunning={false}>
+            <StreamdownTextPrimitive components={components} />
+          </TextMessagePartProvider>,
+        ),
+      ).not.toThrow();
+
+      expect(SyntaxHighlighter).toHaveBeenCalled();
+      const callArgs = SyntaxHighlighter.mock.calls[0]![0];
+      expect(callArgs.language).toBe("ts");
+      expect(callArgs.code.trim()).toBe("const x = 1;");
+    });
+
+    it("renders without throwing when only CodeHeader is provided", () => {
+      const CodeHeader = vi.fn(({ language }: CodeHeaderProps) => (
+        <div data-testid="header">{language}</div>
+      ));
+      const components = { CodeHeader } as unknown as StreamdownTextComponents;
+
+      const { container } = render(
+        <TextMessagePartProvider text={fencedMarkdown} isRunning={false}>
+          <StreamdownTextPrimitive components={components} />
+        </TextMessagePartProvider>,
+      );
+
+      expect(CodeHeader).toHaveBeenCalled();
+      expect(screen.getByTestId("header").textContent).toBe("ts");
+      // Fallback must wrap <code> in <pre> so browsers preserve whitespace.
+      expect(container.querySelector("pre > code")).not.toBeNull();
+    });
+
+    it("renders without throwing when componentsByLanguage is provided for an unmatched language", () => {
+      const PythonHighlighter = vi.fn(() => (
+        <div data-testid="python">python</div>
+      ));
+
+      const { container } = render(
+        <TextMessagePartProvider text={fencedMarkdown} isRunning={false}>
+          <StreamdownTextPrimitive
+            componentsByLanguage={{
+              python: { SyntaxHighlighter: PythonHighlighter },
+            }}
+          />
+        </TextMessagePartProvider>,
+      );
+
+      // block is typescript, python config must be ignored and not invoked
+      expect(PythonHighlighter).not.toHaveBeenCalled();
+      expect(container.querySelector("pre > code")).not.toBeNull();
+    });
+
+    it("dispatches to language-specific SyntaxHighlighter", () => {
+      const TsHighlighter = vi.fn(({ code }: SyntaxHighlighterProps) => (
+        <div data-testid="ts-hl">{code}</div>
+      ));
+      const FallbackHighlighter = vi.fn(() => (
+        <div data-testid="fallback-hl">fallback</div>
+      ));
+
+      render(
+        <TextMessagePartProvider text={fencedMarkdown} isRunning={false}>
+          <StreamdownTextPrimitive
+            components={{ SyntaxHighlighter: FallbackHighlighter }}
+            componentsByLanguage={{
+              ts: { SyntaxHighlighter: TsHighlighter },
+            }}
+          />
+        </TextMessagePartProvider>,
+      );
+
+      expect(TsHighlighter).toHaveBeenCalled();
+      expect(FallbackHighlighter).not.toHaveBeenCalled();
+      expect(screen.getByTestId("ts-hl").textContent?.trim()).toBe(
+        "const x = 1;",
+      );
+    });
+  });
+});

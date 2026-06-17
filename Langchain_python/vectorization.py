@@ -1,6 +1,4 @@
 import os
-from email.headerregistry import UnstructuredHeader
-
 from langchain_community.document_loaders import PyPDFLoader, BSHTMLLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_chroma import Chroma

@@ -1,0 +1,120 @@
+import {
+  defineConfig,
+  defineDocs,
+  defineCollections,
+  frontmatterSchema,
+  metaSchema,
+} from "fumadocs-mdx/config";
+import { rehypeCodeDefaultOptions } from "fumadocs-core/mdx-plugins";
+import { transformerMetaHighlight } from "@shikijs/transformers";
+import { z } from "zod";
+import lastModified from "fumadocs-mdx/plugins/last-modified";
+import type { ShikiTransformer } from "shiki";
+
+function transformerLineNumbers(): ShikiTransformer {
+  return {
+    name: "line-numbers",
+    pre(node) {
+      node.properties["data-line-numbers"] = "";
+    },
+  };
+}
+
+// Platform a doc page or section applies to. Used by the docs sidebar to
+// filter content based on the user's selected platform in the header dropdown.
+// Pages / folders with no `platforms` field are universal.
+// fumadocs-mdx forbids non-collection exports here, so this is local-only.
+const platformSchema = z.enum(["react", "rn", "ink"]);
+
+export const docs = defineDocs({
+  docs: {
+    schema: frontmatterSchema.extend({
+      links: z
+        .array(
+          z.object({
+            label: z.string(),
+            url: z.string(),
+          }),
+        )
+        .optional(),
+      platforms: z.array(platformSchema).optional(),
+    }),
+    postprocess: {
+      includeProcessedMarkdown: true,
+    },
+  },
+  meta: {
+    schema: metaSchema.extend({
+      description: z.string().optional(),
+      overview: z.string().optional(),
+      platforms: z.array(platformSchema).optional(),
+    }),
+  },
+});
+
+export const tapDocs = defineDocs({
+  dir: "content/tap-docs",
+  docs: {
+    schema: frontmatterSchema,
+    postprocess: {
+      includeProcessedMarkdown: true,
+    },
+  },
+  meta: {
+    schema: metaSchema.extend({
+      description: z.string().optional(),
+    }),
+  },
+});
+
+export const examples = defineCollections({
+  type: "doc",
+  dir: "content/examples",
+  schema: frontmatterSchema,
+  postprocess: {
+    includeProcessedMarkdown: true,
+  },
+});
+
+export const blog = defineCollections({
+  type: "doc",
+  dir: "content/blog",
+  schema: frontmatterSchema.extend({
+    author: z.string(),
+    date: z.date().optional(),
+  }),
+  postprocess: {
+    includeProcessedMarkdown: true,
+  },
+});
+
+export const careers = defineCollections({
+  type: "doc",
+  dir: "content/careers",
+  schema: frontmatterSchema.extend({
+    order: z.number().optional(),
+    location: z.string(),
+    type: z.string(),
+    salary: z.string(),
+    summary: z.string(),
+  }),
+});
+
+export default defineConfig({
+  plugins: [lastModified()],
+  mdxOptions: {
+    rehypeCodeOptions: {
+      lazy: true,
+      langs: ["ts", "js", "html", "tsx", "mdx", "bash"],
+      themes: {
+        light: "catppuccin-latte",
+        dark: "catppuccin-mocha",
+      },
+      transformers: [
+        ...(rehypeCodeDefaultOptions.transformers ?? []),
+        transformerLineNumbers(),
+        transformerMetaHighlight(),
+      ],
+    },
+  },
+});
