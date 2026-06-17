@@ -77,6 +77,6 @@ def main(question_eleve):
     print(response.content)
 
 #Prochainement JS navigateur
-question_eleve="Quelles sera la météo de San Francisco demain ? Quelle est la température maximale à Toulouse ? Quel temps fait-il à Paris ?";
+question_eleve="Quel est la relation historique entre les canaries et l'espagne";
 
 main(question_eleve)
