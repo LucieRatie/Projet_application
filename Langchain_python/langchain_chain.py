@@ -6,19 +6,19 @@ from distutils.command.config import config
 
 from Query import search_in_database
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.llms import Ollama
 from langchain_core.prompts import ChatPromptTemplate
 
 def get_model(is_online, temperature):
     if is_online:
         print("🤖 Initialisation de Gemini (Online)...")
+        from langchain_google_genai import ChatGoogleGenerativeAI
         model = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
             temperature=temperature,
         )
     else :
         print("🦙 Initialisation de Ollama/Llama3 (Local)...")
+        from langchain_community.llms import Ollama
         model = Ollama(
             model="llama3",
             temperature=temperature,
