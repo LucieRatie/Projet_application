@@ -20,6 +20,8 @@ function add_context(list_file_path) {
  */
 function init_chat(objective, name, french_level, math_level, resume) {
     // Il faut faire un prompt system avec tous les elements
+    
+
 }
 
 /**
