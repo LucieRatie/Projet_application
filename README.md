@@ -91,3 +91,35 @@ Une fois les deux serveurs lancés, ouvrez votre navigateur à l'adresse :
 
 Si votre base de données est vide lors du premier lancement, vous pouvez la remplir automatiquement avec des données de démonstration. Pour cela, visitez cette URL de l'API (une fois le backend en cours d'exécution) :
 👉 **[http://localhost:5000/api/seed](http://localhost:5000/api/seed)**
+
+---
+
+## 🖥️ Déploiement sur un serveur (Debian/Linux)
+
+Si vous souhaitez déployer cette application sur un serveur Debian (ou Ubuntu) équipé pour faire tourner un modèle IA en local, voici la marche à suivre :
+
+### 1. Pré-requis sur le serveur
+* **Node.js (v18+) & pnpm** : Requis pour faire tourner le Frontend (Next.js) et le Backend (Express).
+* **Python 3 & pip** : Requis pour le serveur RAG (`langchain_python`).
+* **MongoDB** : Ciblez une instance locale ou un conteneur Docker.
+* **Ollama** : Pour faire tourner les modèles locaux. (Installation rapide : `curl -fsSL https://ollama.com/install.sh | sh`).
+
+### 2. Téléchargement du modèle IA
+Une fois Ollama installé, téléchargez le modèle que vous souhaitez utiliser (par exemple, Qwen) :
+```bash
+ollama pull qwen2.5:0.5b
+```
+
+### 3. Lancement en production
+Pour un environnement de production, il est recommandé d'utiliser des gestionnaires de processus (comme `pm2` ou `tmux`) :
+
+1. **Serveur RAG (Python)** : Installez les dépendances (`pip install -r requirements.txt`) et lancez l'API FastAPI (généralement sur le port 8000).
+2. **Backend (Node.js)** :
+   * Modifiez le fichier `apps/backend/.env` pour définir `ONLINE_MODE=false` et `OLLAMA_MODEL=qwen2.5:0.5b`.
+   * Démarrez avec `pnpm install` puis lancez le serveur via PM2 ou `npm run start` (port 5000).
+3. **Frontend (Next.js)** :
+   * Allez dans `apps/frontend/`.
+   * Lancez le build : `pnpm install` puis `pnpm build`.
+   * Démarrez le serveur en écoute publique : `pnpm start --host 0.0.0.0` (port 3000).
+
+Pour un accès externe propre (nom de domaine, HTTPS), nous recommandons de configurer un reverse proxy avec **Nginx** pointant vers le port 3000 de votre frontend.

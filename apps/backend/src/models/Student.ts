@@ -18,6 +18,12 @@ const StudentSchema = new mongoose.Schema(
       default: "<6ème",
     },
     sessionIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Session" }],
+    personalDocuments: [
+      {
+        name: { type: String },
+        url: { type: String },
+      },
+    ],
     lastActive: { type: Date, default: Date.now },
     skillsSummary: {
       vocabulary: { type: Number, default: 0 },

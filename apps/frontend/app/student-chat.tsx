@@ -7,6 +7,10 @@ import {
   ThreadPrimitive,
 } from "@assistant-ui/react";
 import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { useAuth } from "@/lib/auth-context";
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import {
@@ -139,6 +143,8 @@ function StudentChatInner({
   setActiveTab,
   onMessagesChange,
   onSessionChange,
+  activeResume,
+  setActiveResume,
 }: {
   user: any;
   session: any;
@@ -148,6 +154,8 @@ function StudentChatInner({
   setActiveTab: (tab: any) => void;
   onMessagesChange: (msgs: any[]) => void;
   onSessionChange: (id: string) => void;
+  activeResume?: { topic: string; content: string } | null;
+  setActiveResume?: (r: { topic: string; content: string } | null) => void;
 }) {
   const [historyOpen, setHistoryOpen] = useState(true);
   const [profilOpen, setProfilOpen] = useState(true);
@@ -228,13 +236,24 @@ function StudentChatInner({
                       <button
                         key={t._id}
                         onClick={() => {
-                          if (t.topic === "Discussion libre") {
+                          if (t.topic.startsWith("Résumé de ")) {
+                            if (setActiveResume)
+                              setActiveResume({
+                                topic: t.topic,
+                                content: extractText(t.messages[0]),
+                              });
+                            setActiveTab("resume-view");
+                          } else if (t.topic === "Discussion libre") {
                             onSessionChange("free-discussion");
+                            setActiveTab("chat");
                           } else {
                             const found = user.studentData?.sessionIds?.find(
                               (s: any) => s.title === t.topic,
                             );
-                            if (found) onSessionChange(found._id);
+                            if (found) {
+                              onSessionChange(found._id);
+                              setActiveTab("chat");
+                            }
                           }
                         }}
                         className={`w-full rounded-xl border p-3.5 text-left transition-all ${
@@ -367,6 +386,25 @@ function StudentChatInner({
           </div>
         )}
 
+        {activeTab === "resume-view" && activeResume && (
+          <div className="custom-scrollbar h-full w-full flex-1 overflow-y-auto bg-zinc-50 p-4 md:p-8">
+            <div className="mx-auto max-w-3xl rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm md:p-10">
+              <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-zinc-800">
+                <BookOpenText className="text-blue-500" />
+                {activeResume.topic}
+              </h2>
+              <div className="prose prose-blue max-w-none rounded-xl bg-white/50 p-4 leading-relaxed text-zinc-700">
+                <ReactMarkdown
+                  remarkPlugins={[remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {activeResume.content}
+                </ReactMarkdown>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div
           className={`custom-scrollbar h-full overflow-y-auto p-4 md:p-8 ${activeTab === "vocabulaire" ? "block" : "hidden"}`}
         >
@@ -462,10 +500,12 @@ function GlossaryView({ session, user }: { session: any; user: any }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          studentId: user?.studentId,
           sessionId: session?._id,
           aiDocuments: session?.aiDocuments || [],
           frenchLevel: user?.studentData?.frenchLevel,
           nativeLanguage: user?.studentData?.nativeLanguage,
+          topic: session?.title,
         }),
       });
       const data = await res.json();
@@ -495,16 +535,11 @@ function GlossaryView({ session, user }: { session: any; user: any }) {
         </p>
         <button
           onClick={generateGlossary}
-          disabled={loading || !session?.aiDocuments?.length}
+          disabled={loading}
           className="rounded-xl bg-gradient-to-r from-blue-600 to-emerald-500 px-5 py-2.5 text-sm font-medium text-white shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-40 disabled:shadow-none"
         >
           {loading ? "Génération en cours…" : "✨ Créer mon glossaire"}
         </button>
-        {(!session?.aiDocuments || session?.aiDocuments.length === 0) && (
-          <p className="mt-2 text-sm text-red-500">
-            Aucun document dans cette session pour générer le glossaire.
-          </p>
-        )}
         {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
       </div>
 
@@ -549,9 +584,15 @@ function StudentChatContent({
   logout: () => void;
 }) {
   const [activeTab, setActiveTab] = useState<
-    "chat" | "docs" | "history" | "profil" | "vocabulaire"
+    "chat" | "docs" | "history" | "profil" | "vocabulaire" | "resume-view"
   >("chat");
   const [showSessionMenu, setShowSessionMenu] = useState(false);
+  const [localInitialMessages, setLocalInitialMessages] =
+    useState<any[]>(initialMessages);
+  const [activeResume, setActiveResume] = useState<{
+    topic: string;
+    content: string;
+  } | null>(null);
 
   const sessions = useMemo(() => {
     return user.studentData?.sessionIds || [];
@@ -561,14 +602,69 @@ function StudentChatContent({
     return sessions.find((s: any) => s._id === activeSessionId) || sessions[0];
   }, [sessions, activeSessionId]);
 
-  // Student sees documents from the active session
+  const [resumeLoading, setResumeLoading] = useState(false);
+
+  useEffect(() => {
+    setLocalInitialMessages(initialMessages);
+  }, [initialMessages]);
+
+  const generateResume = async () => {
+    if (!session || session._id === "free-discussion") return;
+    setResumeLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/chat/welcome", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionName: session.title,
+          sessionGoal: session.objective,
+          aiDocuments: session.aiDocuments || [],
+          frenchLevel: user?.studentData?.frenchLevel,
+          nativeLanguage: user?.studentData?.nativeLanguage,
+        }),
+      });
+      const data = await res.json();
+      if (data.message) {
+        const title = `Résumé de ${session.title}`;
+        await fetch("http://localhost:5000/api/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId: user.studentId,
+            studentName: user.name,
+            messages: [
+              {
+                role: "assistant",
+                content: [{ type: "text", text: data.message }],
+              },
+            ],
+            languageLevel: user?.studentData?.frenchLevel ?? "A1",
+            mathLevel: user?.studentData?.mathLevel ?? "<6ème",
+            subject: session.subject ?? "Général",
+            topic: title,
+          }),
+        });
+
+        setActiveResume({ topic: title, content: data.message });
+        setActiveTab("resume-view");
+      }
+    } catch (e) {
+      console.error("Failed to generate resume:", e);
+    } finally {
+      setResumeLoading(false);
+    }
+  };
+
+  // Student sees documents from the active session + personal documents
   const visibleDocuments = useMemo(() => {
-    return session?.exerciseDocuments || [];
-  }, [session]);
+    const sessionDocs = session?.exerciseDocuments || [];
+    const personalDocs = user?.studentData?.personalDocuments || [];
+    return [...sessionDocs, ...personalDocs];
+  }, [session, user?.studentData?.personalDocuments]);
 
   const sdkInitialMessages = useMemo(
-    () => mongoToUIMessages(initialMessages),
-    [initialMessages],
+    () => mongoToUIMessages(localInitialMessages),
+    [localInitialMessages],
   );
 
   const runtime = useChatRuntime({
@@ -578,6 +674,8 @@ function StudentChatContent({
       studentId: user?.studentId,
       frenchLevel: user?.studentData?.frenchLevel,
       nativeLanguage: user?.studentData?.nativeLanguage,
+      sessionName: session?.title,
+      sessionGoal: session?.objective,
     },
     messages: sdkInitialMessages,
   });
@@ -698,7 +796,7 @@ function StudentChatContent({
                   }`}
                 />
 
-                <div className="relative">
+                <div className="relative flex items-center gap-2">
                   <button
                     onClick={() => setShowSessionMenu(!showSessionMenu)}
                     className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-sm transition-colors hover:bg-zinc-50 md:px-3 md:py-1.5"
@@ -714,6 +812,16 @@ function StudentChatContent({
                       className={`text-zinc-400 transition-transform ${showSessionMenu ? "rotate-180" : ""}`}
                     />
                   </button>
+                  {session?._id !== "free-discussion" && (
+                    <button
+                      onClick={generateResume}
+                      disabled={resumeLoading}
+                      className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 disabled:opacity-50 md:px-3 md:py-1.5"
+                    >
+                      <span>📝</span>
+                      {resumeLoading ? "Génération..." : "Résumé"}
+                    </button>
+                  )}
 
                   {showSessionMenu && (
                     <>
@@ -798,6 +906,8 @@ function StudentChatContent({
           setActiveTab={setActiveTab}
           onMessagesChange={handleMessagesChange}
           onSessionChange={setActiveSessionId}
+          activeResume={activeResume}
+          setActiveResume={setActiveResume}
         />
       </div>
     </AssistantRuntimeProvider>

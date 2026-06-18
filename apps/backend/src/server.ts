@@ -66,7 +66,33 @@ dbConnect()
 app.post("/api/chat", async (req, res) => {
   try {
     const rawMessages = req.body.messages ?? [];
-    const coreMessages = await convertToModelMessages(rawMessages);
+
+    // Convert UI messages to core messages manually to avoid ai sdk bugs with missing parts
+    const coreMessages = rawMessages.map((msg: any) => {
+      let textContent = "";
+      if (typeof msg.content === "string") {
+        textContent = msg.content;
+      } else if (Array.isArray(msg.content)) {
+        textContent = msg.content
+          .filter((p: any) => p.type === "text")
+          .map((p: any) => p.text)
+          .join("");
+      } else if (Array.isArray(msg.parts)) {
+        textContent = msg.parts
+          .filter((p: any) => p.type === "text")
+          .map((p: any) => p.text)
+          .join("");
+      }
+      return {
+        role:
+          msg.role === "system"
+            ? "system"
+            : msg.role === "user"
+              ? "user"
+              : "assistant",
+        content: textContent || " ",
+      };
+    });
 
     // Mock mode
     if (OLLAMA_URL === "mock") {
@@ -105,6 +131,20 @@ app.post("/api/chat", async (req, res) => {
       return result.pipeDataStreamToResponse(res);
     }
 
+    // Extract request body parameters safely
+    const {
+      aiDocuments = [],
+      frenchLevel,
+      nativeLanguage,
+      sessionName,
+      sessionGoal,
+    } = req.body;
+    console.log("Chat Request Body:", {
+      sessionName,
+      sessionGoal,
+      frenchLevel,
+    });
+
     // Requête au serveur RAG pour obtenir du contexte pertinent
     let ragContext = "";
     try {
@@ -122,10 +162,9 @@ app.post("/api/chat", async (req, res) => {
               : "";
       }
 
-      const { aiDocuments = [], frenchLevel, nativeLanguage } = req.body;
       const sources = aiDocuments.map((doc: any) => doc.name).join(",");
 
-      if (lastUserMsgText) {
+      if (lastUserMsgText && aiDocuments.length > 0) {
         let ragUrl = `http://localhost:8000/search?q=${encodeURIComponent(lastUserMsgText)}`;
         if (sources) {
           ragUrl += `&sources=${encodeURIComponent(sources)}`;
@@ -145,27 +184,34 @@ app.post("/api/chat", async (req, res) => {
       docContext = `INFORMATIONS ISSUES DE LA BASE DE CONNAISSANCES (RAG) :\n${ragContext}\n--------------------\n`;
     }
 
-    const systemPrompt = `Tu es un professeur de soutien scolaire bienveillant chargé de répondre aux questions d'un élève.
+    const systemPrompt = `Tu es Charles, un assistant de soutien scolaire bienveillant chargé de répondre aux questions d'un élève.
     
+CONTEXTE DE LA SESSION :
+- Sujet du cours : ${sessionName || "Général"}
+- Objectif de la session : ${sessionGoal || "Apprentissage libre"}
+
 INFORMATIONS SUR L'ÉLÈVE :
 - Niveau de français (CECRL) : ${req.body.frenchLevel || "Inconnu"}
-- Langue maternelle : ${req.body.nativeLanguage || "Inconnue"}
+- Langue maternelle : ${req.body.nativeLanguage && req.body.nativeLanguage !== "Français" ? req.body.nativeLanguage : "Vietnamien"}
 
 RÈGLES D'ADAPTATION (TRÈS IMPORTANT) :
 - Adapte ton vocabulaire et la complexité de tes phrases strictement au niveau de français de l'élève (${req.body.frenchLevel || "Inconnu"}). Si le niveau est A1/A2, utilise des phrases extrêmement simples, courtes, et des mots basiques.
-- Si pertinent pour expliquer un concept difficile, tu peux faire un parallèle ou donner une traduction ponctuelle dans la langue maternelle de l'élève (${req.body.nativeLanguage || "Inconnue"}).
+- Si pertinent pour expliquer un concept difficile, tu peux faire un parallèle ou donner une traduction ponctuelle dans la langue maternelle de l'élève (${req.body.nativeLanguage && req.body.nativeLanguage !== "Français" ? req.body.nativeLanguage : "Vietnamien"}).
 
 CONSIGNES STRICTES :
 1. Tu DOIS IMPÉRATIVEMENT refuser de répondre si la question n'est pas liée au contexte des documents ou au sujet de la session d'étude. Dis simplement que tu ne peux répondre qu'aux questions liées au cours.
 2. Sois concis et direct. Ne t'éparpille pas dans des explications inutiles ou du bavardage.
 3. Utilise uniquement les informations présentes dans le contexte fourni. Si tu n'as pas la réponse, dis-le clairement (ne devine pas, n'invente rien).
 4. Rappelle-toi de l'historique de la conversation pour comprendre le contexte des questions.
-5. Utilise les documents de cours fournis pour créer des exercices pour l'élève ou lui poser des questions supplémentaires s'il te le demande pour mieux comprendre. Base tes exercices UNIQUEMENT sur ces documents.
+5. Utilise le contexte de la session (Sujet et Objectif) ainsi que les documents fournis pour créer des exercices ou poser des questions. Si aucun document n'est fourni, base tes exercices uniquement sur le Sujet et l'Objectif de la session.
+6. UTILISE STRICTEMENT LE FORMAT LATEX (entre $...$ ou $$...$$) pour TOUTES les formules mathématiques (notamment les fractions, ex: $\frac{a}{b}$).
 
 ${docContext}`;
 
     const result = streamText({
-      model: ONLINE_MODE ? google("gemini-2.5-flash") : ollama(OLLAMA_MODEL),
+      model: ONLINE_MODE
+        ? google("gemini-3.1-flash-lite")
+        : ollama(OLLAMA_MODEL),
       messages: coreMessages,
       system: systemPrompt,
     });
@@ -173,12 +219,76 @@ ${docContext}`;
     result.pipeUIMessageStreamToResponse(res);
   } catch (error: any) {
     console.error("Chat Error:", error);
-    res
-      .status(500)
-      .json({
-        error: "Internal Error",
-        details: error?.stack || String(error),
-      });
+    res.status(500).json({
+      error: "Internal Error",
+      details: error?.stack || String(error),
+    });
+  }
+});
+
+// -----------------------------
+// WELCOME SUMMARY API
+// -----------------------------
+app.post("/api/chat/welcome", async (req, res) => {
+  try {
+    const {
+      sessionName,
+      sessionGoal,
+      aiDocuments = [],
+      frenchLevel,
+      nativeLanguage,
+    } = req.body;
+
+    let combinedText = "";
+    if (aiDocuments.length > 0) {
+      const ragSrcPath = path.join(
+        __dirname,
+        "../../../langchain_python/RAG_src",
+      );
+      for (const doc of aiDocuments) {
+        const filePath = path.join(ragSrcPath, doc.name);
+        if (fs.existsSync(filePath)) {
+          const fileBuffer = fs.readFileSync(filePath);
+          if (filePath.toLowerCase().endsWith(".pdf")) {
+            const pdfText = await parsePdfText(fileBuffer);
+            combinedText += `\n--- Document: ${doc.name} ---\n${pdfText.substring(0, 5000)}\n`; // Limit text size
+          } else {
+            combinedText += `\n--- Document: ${doc.name} ---\n${fileBuffer.toString("utf-8").substring(0, 5000)}\n`;
+          }
+        }
+      }
+    }
+
+    const systemPrompt = `Tu es Charles, un assistant de soutien scolaire bienveillant. 
+L'élève vient de se connecter pour la session "${sessionName || "Étude"}" avec l'objectif "${sessionGoal || "Apprendre"}".
+Niveau de français de l'élève (CECRL) : ${frenchLevel || "Inconnu"}
+Langue maternelle : ${nativeLanguage && nativeLanguage !== "Français" ? nativeLanguage : "Vietnamien"}
+
+CONSIGNES STRICTES :
+1. Adapte ton vocabulaire strictement au niveau de français de l'élève (${frenchLevel || "Inconnu"}).
+2. Rédige un message de bienvenue chaleureux.
+3. Rédige un tóm tắt nội dung cần học (résumé du contenu à apprendre).
+4. Liste les formules ou concepts clés à retenir (công thức cần nhớ). UTILISE STRICTEMENT LE FORMAT LATEX (entre $...$ ou $$...$$) pour TOUTES les formules mathématiques (notamment les fractions, ex: $\frac{a}{b}$).
+5. Donne quelques exercices d'exemple simples (bài tập ví dụ). UTILISE STRICTEMENT LE FORMAT LATEX pour les équations et fractions.
+6. Termine en demandant s'il a besoin d'aide.
+7. Base-toi sur les informations des documents fournis s'il y en a. Sinon, base-toi sur le nom de la session et son objectif.
+
+DOCUMENTS :
+${combinedText || "Aucun document fourni. Utilise l'objectif de la session."}`;
+
+    const { text } = await generateText({
+      model: ONLINE_MODE
+        ? google("gemini-3.1-flash-lite")
+        : ollama(OLLAMA_MODEL),
+      prompt:
+        "Génère le message de bienvenue avec le résumé, les formules et les exercices.",
+      system: systemPrompt,
+    });
+
+    res.json({ message: text });
+  } catch (error: any) {
+    console.error("Welcome API error:", error);
+    res.status(500).json({ error: "Failed to generate welcome summary" });
   }
 });
 
@@ -237,7 +347,9 @@ CONSIGNES :
 Ne dis pas "Voici le bilan", donne directement l'évaluation.`;
 
     const { text } = await generateText({
-      model: ONLINE_MODE ? google("gemini-2.5-flash") : ollama(OLLAMA_MODEL),
+      model: ONLINE_MODE
+        ? google("gemini-3.1-flash-lite")
+        : ollama(OLLAMA_MODEL),
       messages: [
         { role: "user", content: `Historique :\n${conversationText}` },
       ],
@@ -257,10 +369,12 @@ Ne dis pas "Voici le bilan", donne directement l'évaluation.`;
 app.post("/api/glossary", async (req, res) => {
   try {
     const {
+      studentId,
       sessionId,
       aiDocuments = [],
       frenchLevel,
       nativeLanguage,
+      topic,
     } = req.body;
 
     if (!nativeLanguage || nativeLanguage.trim() === "") {
@@ -289,33 +403,35 @@ app.post("/api/glossary", async (req, res) => {
       }
     }
 
-    if (!combinedText) {
-      return res
-        .status(400)
-        .json({ error: "Aucun document trouvé pour générer le glossaire." });
-    }
-
     const systemPrompt = `Tu es un professeur de langue expert. Ton rôle est de créer un glossaire bilingue très ciblé pour un élève.
 Niveau de l'élève en français : ${frenchLevel || "Débutant (A1)"}
-Langue maternelle de l'élève : ${nativeLanguage}
+Langue maternelle de l'élève : ${nativeLanguage && nativeLanguage !== "Français" ? nativeLanguage : "Vietnamien"}
 
-À partir des documents fournis, extrais exactement 10 à 15 mots, concepts clés ou expressions qui sont essentiels pour comprendre le document ET qui pourraient être difficiles pour cet élève.
+À partir des documents ou du sujet fourni, génère exactement 10 à 15 mots, concepts clés ou expressions qui sont essentiels pour comprendre la leçon ET qui pourraient être difficiles pour cet élève.
 Pour chaque mot, donne :
 1. Le mot en français.
-2. Sa traduction la plus naturelle et précise dans la langue maternelle de l'élève (${nativeLanguage}).
+2. Sa traduction la plus naturelle et précise dans la langue maternelle de l'élève (${nativeLanguage && nativeLanguage !== "Français" ? nativeLanguage : "Vietnamien"}).
 3. Une explication très simple et courte en français, adaptée à son niveau (${frenchLevel || "A1"}).`;
 
+    const promptText = combinedText
+      ? `Voici les textes des documents:\n${combinedText}\n\nGénère le glossaire bilingue comme demandé.`
+      : `Voici le sujet de la session d'étude:\n${topic || "Général"}\n\nGénère le glossaire bilingue pour ce sujet comme demandé.`;
+
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"),
+      model: ONLINE_MODE
+        ? google("gemini-3.1-flash-lite")
+        : ollama(OLLAMA_MODEL),
       system: systemPrompt,
-      prompt: `Voici les textes des documents:\n${combinedText}\n\nGénère le glossaire bilingue comme demandé.`,
+      prompt: promptText,
       schema: z.object({
         glossary: z.array(
           z.object({
             motFr: z.string().describe("Le mot ou l'expression en français"),
             traduction: z
               .string()
-              .describe(`La traduction en ${nativeLanguage}`),
+              .describe(
+                `La traduction en ${nativeLanguage && nativeLanguage !== "Français" ? nativeLanguage : "Vietnamien"}`,
+              ),
             explication: z
               .string()
               .describe("L'explication très simple en français"),
@@ -333,22 +449,25 @@ Pour chaque mot, donne :
       fs.writeFileSync(path.join(ragSrcPath, fileName), fileContent);
 
       const fileUrl = `http://localhost:5000/uploads/${encodeURIComponent(fileName)}`;
-      await Session.findByIdAndUpdate(sessionId, {
-        $push: {
-          exerciseDocuments: { name: "Glossaire Bilingue", url: fileUrl },
-        },
-      });
+      if (studentId) {
+        await Student.findOneAndUpdate(
+          { studentId },
+          {
+            $push: {
+              personalDocuments: { name: "Glossaire Bilingue", url: fileUrl },
+            },
+          },
+        );
+      }
     }
 
     res.json(object);
   } catch (error: any) {
     console.error("Glossary API Error:", error);
-    res
-      .status(500)
-      .json({
-        error: `Failed to generate glossary: ${error?.message || String(error)}`,
-        details: error?.stack || String(error),
-      });
+    res.status(500).json({
+      error: `Failed to generate glossary: ${error?.message || String(error)}`,
+      details: error?.stack || String(error),
+    });
   }
 });
 
@@ -385,7 +504,7 @@ app.post("/api/sync", async (req, res) => {
         mathLevel: mathLevel || "CP",
         subject: subject || "Mathématiques",
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
     res.json(thread);
   } catch (error) {
@@ -507,7 +626,7 @@ app.patch("/api/students/:id", async (req, res) => {
     }
 
     const student = await Student.findByIdAndUpdate(req.params.id, update, {
-      new: true,
+      returnDocument: "after",
     });
     res.json(student);
   } catch (error) {
@@ -530,7 +649,7 @@ app.put("/api/students/:id", async (req, res) => {
     }
 
     const student = await Student.findByIdAndUpdate(req.params.id, update, {
-      new: true,
+      returnDocument: "after",
     });
     res.json(student);
   } catch (error) {
@@ -571,7 +690,7 @@ app.post("/api/sessions", async (req, res) => {
 app.patch("/api/sessions/:id", async (req, res) => {
   try {
     const session = await Session.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+      returnDocument: "after",
     });
     if (!session) return res.status(404).json({ error: "Session not found" });
     res.json(session);
