@@ -236,9 +236,9 @@ export default function TeacherDashboard() {
     try {
       if (!silent) setLoading(true);
       const [threadsRes, studentsRes, sessionsRes] = await Promise.all([
-        fetch("http://localhost:5000/api/threads?t=" + Date.now()),
-        fetch("http://localhost:5000/api/students?t=" + Date.now()),
-        fetch("http://localhost:5000/api/sessions?t=" + Date.now()),
+        fetch("/api/threads?t=" + Date.now()),
+        fetch("/api/students?t=" + Date.now()),
+        fetch("/api/sessions?t=" + Date.now()),
       ]);
       const [threadsData, studentsData, sessionsData] = await Promise.all([
         threadsRes.json(),
@@ -280,7 +280,7 @@ export default function TeacherDashboard() {
 
   const updateStudent = async (id: string, data: any) => {
     console.log("Updating student:", id, data);
-    await fetch(`http://localhost:5000/api/students/${id}`, {
+    await fetch(`/api/students/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -383,7 +383,7 @@ export default function TeacherDashboard() {
                               `Voulez-vous vraiment supprimer l'historique de ${t.studentName} ?`,
                               async () => {
                                 const res = await fetch(
-                                  `http://localhost:5000/api/threads/${t._id}`,
+                                  `/api/threads/${t._id}`,
                                   {
                                     method: "DELETE",
                                   },
@@ -773,14 +773,11 @@ function StudentCard({
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  const res = await fetch(
-                    "http://localhost:5000/api/evaluate",
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ studentId: student.studentId }),
-                    },
-                  );
+                  const res = await fetch("/api/evaluate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ studentId: student.studentId }),
+                  });
                   const data = await res.json();
                   if (data.evaluation) {
                     setLocalDescription(data.evaluation);
@@ -869,7 +866,7 @@ function StudentManager({
 
   const addStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("http://localhost:5000/api/students", {
+    const res = await fetch("/api/students", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(formData),
@@ -962,12 +959,9 @@ function StudentManager({
                 "Supprimer l'élève ?",
                 `Voulez-vous vraiment supprimer ${s.firstName} ${s.lastName} ?`,
                 async () => {
-                  const res = await fetch(
-                    `http://localhost:5000/api/students/${s._id}`,
-                    {
-                      method: "DELETE",
-                    },
-                  );
+                  const res = await fetch(`/api/students/${s._id}`, {
+                    method: "DELETE",
+                  });
                   if (res.ok) {
                     refresh();
                     toast.success("Élève supprimé");
@@ -1148,7 +1142,7 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
     formDataUpload.append("file", file);
 
     try {
-      const res = await fetch("http://localhost:5000/api/upload", {
+      const res = await fetch("/api/upload", {
         method: "POST",
         body: formDataUpload,
       });
@@ -1186,8 +1180,8 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
   const addSession = async (e: React.FormEvent) => {
     e.preventDefault();
     const url = editingSession
-      ? `http://localhost:5000/api/sessions/${editingSession._id}`
-      : "http://localhost:5000/api/sessions";
+      ? `/api/sessions/${editingSession._id}`
+      : "/api/sessions";
     const method = editingSession ? "PATCH" : "POST";
 
     const res = await fetch(url, {
@@ -1208,7 +1202,7 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
   const batchAssign = async (sessionId: string) => {
     await Promise.all(
       selectedStudents.map((studentId) =>
-        fetch(`http://localhost:5000/api/students/${studentId}`, {
+        fetch(`/api/students/${studentId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "addSession", sessionId }),
@@ -1304,12 +1298,9 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
                       "Supprimer la session ?",
                       `Voulez-vous vraiment supprimer la session "${s.title}" ?`,
                       async () => {
-                        const res = await fetch(
-                          `http://localhost:5000/api/sessions/${s._id}`,
-                          {
-                            method: "DELETE",
-                          },
-                        );
+                        const res = await fetch(`/api/sessions/${s._id}`, {
+                          method: "DELETE",
+                        });
                         if (res.ok) {
                           refresh();
                           toast.success("Session supprimée");
@@ -1438,17 +1429,14 @@ function SessionManager({ students, sessions, refresh, askConfirmation }: any) {
                           "Retirer l'élève ?",
                           `Voulez-vous retirer ${st.firstName} de cette session ?`,
                           async () => {
-                            await fetch(
-                              `http://localhost:5000/api/students/${st._id}`,
-                              {
-                                method: "PATCH",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                  action: "removeSession",
-                                  sessionId: showStudentList,
-                                }),
-                              },
-                            );
+                            await fetch(`/api/students/${st._id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                action: "removeSession",
+                                sessionId: showStudentList,
+                              }),
+                            });
                             refresh();
                             toast.success("Élève retiré de la session");
                           },

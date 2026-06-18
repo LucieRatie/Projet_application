@@ -4,6 +4,8 @@ import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
+import { AuthProvider } from "@/lib/auth-context";
+
 export const metadata: Metadata = {
   title: "AI SDK v6 Example",
   description: "Example using @assistant-ui/react with AI SDK v6",
@@ -17,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} h-dvh`} suppressHydrationWarning>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

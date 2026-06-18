@@ -496,7 +496,7 @@ function GlossaryView({ session, user }: { session: any; user: any }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:5000/api/glossary", {
+      const res = await fetch("/api/glossary", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -612,7 +612,7 @@ function StudentChatContent({
     if (!session || session._id === "free-discussion") return;
     setResumeLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/chat/welcome", {
+      const res = await fetch("/api/chat/welcome", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -626,7 +626,7 @@ function StudentChatContent({
       const data = await res.json();
       if (data.message) {
         const title = `Résumé de ${session.title}`;
-        await fetch("http://localhost:5000/api/sync", {
+        await fetch("/api/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -692,7 +692,7 @@ function StudentChatContent({
       if (!user?.studentId || msgs.length === 0) return;
       setSyncStatus("syncing");
       try {
-        const res = await fetch("http://localhost:5000/api/sync", {
+        const res = await fetch("/api/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -929,11 +929,9 @@ export default function StudentChat() {
       if (!user?.studentId) return;
       try {
         const [threadRes, studentRes] = await Promise.all([
+          fetch(`/api/threads?studentId=${user.studentId}&t=${Date.now()}`),
           fetch(
-            `http://localhost:5000/api/threads?studentId=${user.studentId}&t=${Date.now()}`,
-          ),
-          fetch(
-            `http://localhost:5000/api/students/login?studentId=${user.studentId}&t=${Date.now()}`,
+            `/api/students/login?studentId=${user.studentId}&t=${Date.now()}`,
           ),
         ]);
         const threadData = await threadRes.json();

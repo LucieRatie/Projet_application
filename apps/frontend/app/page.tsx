@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { useAuth } from "@/lib/auth-context";
 import LoginPage from "@/components/login-page";
 import StudentChat from "./student-chat";
 import TeacherDashboard from "./dashboard/page";
@@ -50,9 +50,5 @@ function AppContent() {
 }
 
 export default function Home() {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
+  return <AppContent />;
 }

@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginAsStudent = async (id: string) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/students/login?studentId=${id}`);
+      const res = await fetch(`/api/students/login?studentId=${id}`);
       if (res.ok) {
         const student = await res.json();
         const newUser = {
