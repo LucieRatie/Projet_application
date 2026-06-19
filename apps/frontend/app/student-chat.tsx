@@ -938,13 +938,20 @@ export default function StudentChat() {
         const studentData = await studentRes.json();
 
         if (isFirstLoad) {
-          // Free discussion is always first and default
-          setActiveSessionId("free-discussion");
-
-          const currentThread =
-            threadData.find((t: any) => t.topic === "Discussion libre") ||
-            threadData[0];
-          setInitialMessages(currentThread?.messages ?? []);
+          const firstAssignedSession = studentData?.sessionIds?.[0];
+          if (firstAssignedSession) {
+            setActiveSessionId(firstAssignedSession._id);
+            const currentThread = threadData.find(
+              (t: any) => t.topic === firstAssignedSession.title,
+            );
+            setInitialMessages(currentThread?.messages ?? []);
+          } else {
+            setActiveSessionId("free-discussion");
+            const currentThread =
+              threadData.find((t: any) => t.topic === "Discussion libre") ||
+              threadData[0];
+            setInitialMessages(currentThread?.messages ?? []);
+          }
         }
 
         setHistoryThreads(threadData);
