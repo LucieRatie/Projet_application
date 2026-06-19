@@ -6,7 +6,10 @@ import {
   useThread,
   ThreadPrimitive,
 } from "@assistant-ui/react";
-import { useChatRuntime } from "@assistant-ui/react-ai-sdk";
+import {
+  useChatRuntime,
+  AssistantChatTransport,
+} from "@assistant-ui/react-ai-sdk";
 import ReactMarkdown from "react-markdown";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
@@ -314,7 +317,7 @@ function StudentChatInner({
                   <SuggestionPill
                     label="Explique-moi plus simplement"
                     icon={<Lightbulb size={13} className="text-amber-500" />}
-                    prompt="Peux-tu m'expliquer cela avec des mots plus simples et des exemples concrets ?"
+                    prompt={`En te basant sur le sujet du cours "${session?.title || "actuel"}" (objectif : ${session?.objective || "apprentissage"}), peux-tu m'expliquer ce qu'on vient de voir avec des mots plus simples et des exemples concrets ?`}
                   />
                   <SuggestionPill
                     label="Traduis dans ma langue maternelle"
@@ -324,7 +327,7 @@ function StudentChatInner({
                   <SuggestionPill
                     label="Donne-moi un exercice"
                     icon={<Brain size={13} className="text-emerald-500" />}
-                    prompt="Propose-moi un petit exercice pour vérifier que j'ai bien compris."
+                    prompt={`En te basant UNIQUEMENT sur le sujet du cours "${session?.title || "actuel"}" (objectif : ${session?.objective || "apprentissage"}), propose-moi un petit exercice pour vérifier que j'ai bien compris. L'exercice doit porter sur ce sujet et rien d'autre.`}
                   />
                 </div>
               </div>
@@ -668,7 +671,9 @@ function StudentChatContent({
   );
 
   const runtime = useChatRuntime({
-    api: "/api/chat",
+    transport: new AssistantChatTransport({
+      api: `/api/chat?sessionId=${session?._id || ""}`,
+    }),
     body: {
       aiDocuments: session?.aiDocuments || [],
       studentId: user?.studentId,
@@ -676,6 +681,7 @@ function StudentChatContent({
       nativeLanguage: user?.studentData?.nativeLanguage,
       sessionName: session?.title,
       sessionGoal: session?.objective,
+      sessionId: session?._id,
     },
     messages: sdkInitialMessages,
   });

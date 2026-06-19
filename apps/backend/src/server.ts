@@ -132,16 +132,35 @@ app.post("/api/chat", async (req, res) => {
     }
 
     // Extract request body parameters safely
-    const {
+    let {
       aiDocuments = [],
       frenchLevel,
       nativeLanguage,
       sessionName,
       sessionGoal,
     } = req.body;
+    const sessionId = req.body.sessionId || req.query.sessionId;
+
+    // Fallback: if sessionName is missing but sessionId is present, look up the session from DB
+    if (!sessionName && sessionId) {
+      try {
+        const sessionDoc = await Session.findById(sessionId);
+        if (sessionDoc) {
+          sessionName = sessionDoc.title;
+          sessionGoal = sessionGoal || sessionDoc.objective;
+          if (aiDocuments.length === 0 && sessionDoc.aiDocuments?.length > 0) {
+            aiDocuments = sessionDoc.aiDocuments;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not look up session by ID:", err);
+      }
+    }
+
     console.log("Chat Request Body:", {
       sessionName,
       sessionGoal,
+      sessionId,
       frenchLevel,
     });
 
@@ -164,8 +183,14 @@ app.post("/api/chat", async (req, res) => {
 
       const sources = aiDocuments.map((doc: any) => doc.name).join(",");
 
-      if (lastUserMsgText && aiDocuments.length > 0) {
-        let ragUrl = `http://localhost:8000/search?q=${encodeURIComponent(lastUserMsgText)}`;
+      // Enrich RAG query with session context for generic prompts (exercises, explanations)
+      let ragQuery = lastUserMsgText;
+      if (sessionName && lastUserMsgText) {
+        ragQuery = `${sessionName} ${sessionGoal || ""} ${lastUserMsgText}`;
+      }
+
+      if (ragQuery && aiDocuments.length > 0) {
+        let ragUrl = `http://localhost:8000/search?q=${encodeURIComponent(ragQuery)}`;
         if (sources) {
           ragUrl += `&sources=${encodeURIComponent(sources)}`;
         }
@@ -181,13 +206,19 @@ app.post("/api/chat", async (req, res) => {
 
     let docContext = "";
     if (ragContext) {
-      docContext = `INFORMATIONS ISSUES DE LA BASE DE CONNAISSANCES (RAG) :\n${ragContext}\n--------------------\n`;
+      docContext = `\nINFORMATIONS ISSUES DE LA BASE DE CONNAISSANCES (RAG) :\n${ragContext}\n--------------------\n`;
     }
 
     const systemPrompt = `Tu es Charles, un assistant de soutien scolaire bienveillant chargé de répondre aux questions d'un élève.
-    
+
+=== CONTRAINTE ABSOLUE (NE JAMAIS IGNORER) ===
+Tu es EXCLUSIVEMENT un tuteur pour le sujet "${sessionName || "ce cours"}".
+TOUS tes exercices, exemples, explications et réponses doivent porter UNIQUEMENT sur le sujet "${sessionName || "ce cours"}" avec l'objectif "${sessionGoal || "Apprentissage libre"}".
+Si l'élève demande un exercice, une explication ou un exemple, base-toi sur le sujet et l'objectif de la session${ragContext ? ", ainsi que sur les documents fournis" : ""}. Ne génère JAMAIS de contenu sur un autre sujet, même si l'élève le demande.
+=== FIN CONTRAINTE ABSOLUE ===
+
 CONTEXTE DE LA SESSION :
-- Sujet du cours : ${sessionName || "Général"}
+- Sujet du cours : ${sessionName || "ce cours"}
 - Objectif de la session : ${sessionGoal || "Apprentissage libre"}
 
 INFORMATIONS SUR L'ÉLÈVE :
@@ -199,13 +230,12 @@ RÈGLES D'ADAPTATION (TRÈS IMPORTANT) :
 - Si pertinent pour expliquer un concept difficile, tu peux faire un parallèle ou donner une traduction ponctuelle dans la langue maternelle de l'élève (${req.body.nativeLanguage || "Anglais"}).
 
 CONSIGNES STRICTES :
-1. Tu DOIS IMPÉRATIVEMENT refuser de répondre si la question n'est pas liée au contexte des documents ou au sujet de la session d'étude. Dis simplement que tu ne peux répondre qu'aux questions liées au cours.
+1. Tu DOIS IMPÉRATIVEMENT refuser de répondre si la question n'est pas liée au sujet "${sessionName || "ce cours"}". Dis simplement que tu ne peux répondre qu'aux questions liées au cours "${sessionName || "ce cours"}".
 2. Sois concis et direct. Ne t'éparpille pas dans des explications inutiles ou du bavardage.
-3. Utilise uniquement les informations présentes dans le contexte fourni. Si tu n'as pas la réponse, dis-le clairement (ne devine pas, n'invente rien).
+3. Si des documents RAG sont fournis ci-dessous, utilise-les comme source principale. Sinon, utilise tes connaissances générales sur le sujet "${sessionName || "ce cours"}" et l'objectif "${sessionGoal || "Apprentissage libre"}" pour répondre, créer des exercices et des explications.
 4. Rappelle-toi de l'historique de la conversation pour comprendre le contexte des questions.
-5. Utilise le contexte de la session (Sujet et Objectif) ainsi que les documents fournis pour créer des exercices ou poser des questions. Si aucun document n'est fourni, base tes exercices uniquement sur le Sujet et l'Objectif de la session.
-6. UTILISE STRICTEMENT LE FORMAT LATEX (entre $...$ ou $$...$$) pour TOUTES les formules mathématiques (notamment les fractions, ex: $\frac{a}{b}$).
-
+5. Quand l'élève demande un exercice, crée un exercice EXCLUSIVEMENT sur le sujet "${sessionName || "ce cours"}" (objectif : "${sessionGoal || "Apprentissage libre"}"). Ne propose JAMAIS un exercice sur un sujet différent.
+6. UTILISE STRICTEMENT LE FORMAT LATEX (entre $...$ ou $$...$$) pour TOUTES les formules mathématiques (notamment les fractions, ex: $\\frac{a}{b}$).
 ${docContext}`;
 
     const result = streamText({
@@ -415,7 +445,7 @@ Pour chaque mot, donne :
 
     const promptText = combinedText
       ? `Voici les textes des documents:\n${combinedText}\n\nGénère le glossaire bilingue comme demandé.`
-      : `Voici le sujet de la session d'étude:\n${topic || "Général"}\n\nGénère le glossaire bilingue pour ce sujet comme demandé.`;
+      : `Voici le sujet de la session d'étude:\n${topic || "ce cours"}\n\nGénère le glossaire bilingue pour ce sujet comme demandé.`;
 
     const { object } = await generateObject({
       model: ONLINE_MODE
@@ -592,6 +622,16 @@ app.post("/api/students", async (req, res) => {
     res.json(student);
   } catch (error) {
     res.status(500).json({ error: "Failed to create student" });
+  }
+});
+
+app.delete("/api/students/all", async (req, res) => {
+  try {
+    await Student.deleteMany({});
+    res.json({ success: true, message: "Tous les élèves ont été supprimés." });
+  } catch (error) {
+    console.error("Error deleting all students:", error);
+    res.status(500).json({ error: "Failed to delete all students" });
   }
 });
 

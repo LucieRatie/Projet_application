@@ -159,10 +159,10 @@ async def search_rag(q: str, sources: Optional[str] = None):
             elif len(filenames) > 1:
                 where_clause = {"source": {"$in": filenames}}
 
-        # Requête native Chroma (Renvoie les k=2 meilleurs résultats pour plus de rapidité)
+        # Requête native Chroma (Renvoie les k=4 meilleurs résultats pour plus de contexte)
         results = collection.query(
             query_texts=[q],
-            n_results=2,
+            n_results=4,
             where=where_clause
         )
 

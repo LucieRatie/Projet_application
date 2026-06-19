@@ -888,6 +888,27 @@ function StudentManager({
     }
   };
 
+  const deleteAllStudents = () => {
+    askConfirmation(
+      "Êtes-vous sûr de vouloir supprimer TOUS les élèves ? Cette action est irréversible.",
+      async () => {
+        try {
+          const res = await fetch("/api/students/all", {
+            method: "DELETE",
+          });
+          if (res.ok) {
+            refresh();
+            toast.success("Tous les élèves ont été supprimés");
+          } else {
+            toast.error("Erreur lors de la suppression");
+          }
+        } catch (error) {
+          toast.error("Erreur serveur");
+        }
+      },
+    );
+  };
+
   return (
     <div className="custom-scrollbar h-full overflow-y-auto bg-white p-4 md:p-8">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -900,6 +921,12 @@ function StudentManager({
             className="rounded-xl border border-indigo-200 bg-indigo-50 px-6 py-3 text-sm font-bold tracking-widest text-indigo-600 uppercase transition-all hover:bg-indigo-100"
           >
             📄 EXPORTER PDF
+          </button>
+          <button
+            onClick={deleteAllStudents}
+            className="rounded-xl border border-red-200 bg-red-50 px-6 py-3 text-sm font-bold tracking-widest text-red-600 uppercase transition-all hover:bg-red-100"
+          >
+            🗑️ Supprimer tous
           </button>
           <button
             onClick={() => setShowAdd(true)}
