@@ -192,11 +192,11 @@ CONTEXTE DE LA SESSION :
 
 INFORMATIONS SUR L'ÉLÈVE :
 - Niveau de français (CECRL) : ${req.body.frenchLevel || "Inconnu"}
-- Langue maternelle : ${req.body.nativeLanguage && req.body.nativeLanguage !== "Français" ? req.body.nativeLanguage : "Vietnamien"}
+- Langue maternelle : ${req.body.nativeLanguage || "Anglais"}
 
 RÈGLES D'ADAPTATION (TRÈS IMPORTANT) :
 - Adapte ton vocabulaire et la complexité de tes phrases strictement au niveau de français de l'élève (${req.body.frenchLevel || "Inconnu"}). Si le niveau est A1/A2, utilise des phrases extrêmement simples, courtes, et des mots basiques.
-- Si pertinent pour expliquer un concept difficile, tu peux faire un parallèle ou donner une traduction ponctuelle dans la langue maternelle de l'élève (${req.body.nativeLanguage && req.body.nativeLanguage !== "Français" ? req.body.nativeLanguage : "Vietnamien"}).
+- Si pertinent pour expliquer un concept difficile, tu peux faire un parallèle ou donner une traduction ponctuelle dans la langue maternelle de l'élève (${req.body.nativeLanguage || "Anglais"}).
 
 CONSIGNES STRICTES :
 1. Tu DOIS IMPÉRATIVEMENT refuser de répondre si la question n'est pas liée au contexte des documents ou au sujet de la session d'étude. Dis simplement que tu ne peux répondre qu'aux questions liées au cours.
@@ -262,14 +262,14 @@ app.post("/api/chat/welcome", async (req, res) => {
     const systemPrompt = `Tu es Charles, un assistant de soutien scolaire bienveillant. 
 L'élève vient de se connecter pour la session "${sessionName || "Étude"}" avec l'objectif "${sessionGoal || "Apprendre"}".
 Niveau de français de l'élève (CECRL) : ${frenchLevel || "Inconnu"}
-Langue maternelle : ${nativeLanguage && nativeLanguage !== "Français" ? nativeLanguage : "Vietnamien"}
+Langue maternelle : ${nativeLanguage || "Anglais"}
 
 CONSIGNES STRICTES :
 1. Adapte ton vocabulaire strictement au niveau de français de l'élève (${frenchLevel || "Inconnu"}).
 2. Rédige un message de bienvenue chaleureux.
-3. Rédige un tóm tắt nội dung cần học (résumé du contenu à apprendre).
-4. Liste les formules ou concepts clés à retenir (công thức cần nhớ). UTILISE STRICTEMENT LE FORMAT LATEX (entre $...$ ou $$...$$) pour TOUTES les formules mathématiques (notamment les fractions, ex: $\frac{a}{b}$).
-5. Donne quelques exercices d'exemple simples (bài tập ví dụ). UTILISE STRICTEMENT LE FORMAT LATEX pour les équations et fractions.
+3. Rédige un résumé du contenu à apprendre.
+4. Liste les formules ou concepts clés à retenir. UTILISE STRICTEMENT LE FORMAT LATEX (entre $...$ ou $$...$$) pour TOUTES les formules mathématiques (notamment les fractions, ex: $\frac{a}{b}$).
+5. Donne quelques exercices d'exemple simples. UTILISE STRICTEMENT LE FORMAT LATEX pour les équations et fractions.
 6. Termine en demandant s'il a besoin d'aide.
 7. Base-toi sur les informations des documents fournis s'il y en a. Sinon, base-toi sur le nom de la session et son objectif.
 
@@ -429,9 +429,7 @@ Pour chaque mot, donne :
             motFr: z.string().describe("Le mot ou l'expression en français"),
             traduction: z
               .string()
-              .describe(
-                `La traduction en ${nativeLanguage && nativeLanguage !== "Français" ? nativeLanguage : "Vietnamien"}`,
-              ),
+              .describe(`La traduction en ${nativeLanguage || "Anglais"}`),
             explication: z
               .string()
               .describe("L'explication très simple en français"),
