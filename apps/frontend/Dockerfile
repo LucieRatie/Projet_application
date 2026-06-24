@@ -6,7 +6,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Installation des dépendances
-RUN npm install
+RUN pnpm install
+RUN pnpm build
 
 # Copie du reste du code
 COPY . .
