@@ -8,7 +8,7 @@ WORKDIR /app
 # 1. Copier l'intégralité du projet (nécessaire pour garder la structure /apps)
 COPY . .
 WORKDIR /app/apps
-RUN pnpm --parallel --filter frontend --filter backend dev
+#RUN pnpm --parallel --filter frontend --filter backend dev
 
 # 2. Installer les dépendances dans /apps/backend
 WORKDIR /app/apps/backend
