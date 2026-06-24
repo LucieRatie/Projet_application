@@ -43,3 +43,5 @@ allowBuilds:
   react-grab: false
   sharp@0.34.5: true
   sqlite3@5.1.7: true
+
+dangerouslyAllowAllBuilds: true
