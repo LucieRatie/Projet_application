@@ -1,3 +1,4 @@
 fastapi
 bs4
 langchain_community
+chromadb
