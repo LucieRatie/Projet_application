@@ -2,21 +2,22 @@ FROM node:24-alpine
 
 WORKDIR /app
 RUN npm install -g pnpm
+RUN corepack enable
+
 # Copie des fichiers de dépendances
-COPY . .
 COPY package*.json ./
 COPY pnpm-workspace.yaml ./
 COPY pnpm-lock.yaml turbo.json ./
 COPY packages ./packages
 
 # Installation des dépendances
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter frontend add @assistant-ui/next
 
-RUN pnpm build
+RUN pnpm --filter frontend build
 
 # Copie du reste du code
-#COPY . .
+COPY . .
 
 EXPOSE 3000
 
