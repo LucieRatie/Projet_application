@@ -1,4 +1,5 @@
 /*const { withAui } = await import("@assistant-ui/next");*/
+import { withAui } from "@assistant-ui/next";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@assistant-ui/react", "@assistant-ui/react-ai-sdk"],
@@ -19,4 +20,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withAui(nextConfig);

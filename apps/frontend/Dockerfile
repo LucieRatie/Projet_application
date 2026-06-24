@@ -15,7 +15,7 @@ COPY apps ./apps
 
 
 #COPY . .
-RUN pnpm --filter frontend build
+RUN pnpm --filter frontend exec next build
 
 # Copie du reste du code
 
