@@ -14,7 +14,7 @@ COPY packages ./packages
 RUN pnpm install
 
 
-RUN pnpm --filter frontend build
+RUN pnpm build
 
 # Copie du reste du code
 COPY . .
