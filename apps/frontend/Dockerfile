@@ -20,9 +20,9 @@ RUN pnpm install --no-frozen-lockfile --shamefully-hoist
 
 
 #COPY . .
-RUN pnpm -r build
+RUN pnpm build
 #RUN pnpm --filter @assistant-ui/next build
-#RUN pnpm --filter frontend exec next build
+#RUN pnpm --filter frontend build
 
 # Copie du reste du code
 
