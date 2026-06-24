@@ -3,14 +3,15 @@ FROM node:24-alpine
 WORKDIR /app
 RUN npm install -g pnpm
 # Copie des fichiers de dépendances
-COPY package*.json ./
+COPY . .
+#COPY package*.json ./
 
 # Installation des dépendances
 RUN pnpm install
 RUN pnpm build
 
 # Copie du reste du code
-COPY . .
+#COPY . .
 
 EXPOSE 3000
 
