@@ -30,27 +30,18 @@ services:
       - ollama
       - mongodb
 
-  # Backend Node.js
-  backend:
+  app:
     build:
-      context: ./apps/backend/
-    container_name: backend_service
+      context: .
+      dockerfile: Dockerfile.monorepo
+    container_name: web_app_service
     ports:
-      - "5000:5000"
+      - "3000:3000" # Port Frontend
+      - "5000:5000" # Port Backend
     environment:
       - MONGO_URI=mongodb://mongodb:27017/ton_nom_de_bdd
     depends_on:
       - mongodb
-
-  # Frontend Node.js
-  frontend:
-    build:
-      context: ./apps/frontend
-    container_name: frontend_service
-    ports:
-      - "3000:3000"
-    depends_on:
-      - backend
 
 volumes:
   mongo_data:
