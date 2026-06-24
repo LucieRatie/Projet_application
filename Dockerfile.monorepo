@@ -1,28 +1,27 @@
-FROM node:24-slim AS base
+FROM node:24-slim
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable
 
 WORKDIR /app
 
-# 1. Copier les fichiers de configuration globale pour installer les dépendances
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-# Copier aussi les packages partagés si le front/back en dépendent
-COPY packages ./packages 
-# Copier les projets concernés
-COPY apps/backend ./apps/backend
-COPY apps/frontend ./apps/frontend
+# 1. Copier l'intégralité du projet (nécessaire pour garder la structure /apps)
 COPY . .
+RUN ls -la && sleep 60
+# 2. Installer les dépendances dans /apps/backend
+WORKDIR /app/apps/backend
+RUN pnpm install
 
-RUN pnpm --parallel --filter frontend --filter backend dev
-# 2. Installer toutes les dépendances du workspace
-RUN pnpm install --frozen-lockfile
+# 3. Installer les dépendances et build dans /apps/frontend
+WORKDIR /app/apps/frontend
+RUN pnpm install
+RUN pnpm build
 
-# 3. Build du frontend (puisque tu as demandé un pnpm build pour le front)
-RUN pnpm --filter frontend build
+# 4. Se placer dans /apps pour exécuter la commande de démarrage
+WORKDIR /app/apps
 
-# 4. Exposer les ports du backend (5000) et du frontend (3000)
-EXPOSE 5000 3000
+# Exposer les ports nécessaires
+EXPOSE 3000 5000
 
-# 5. Lancer le mode dev en parallèle pour le front et le back
+# 5. Lancer le mode dev en parallèle depuis /apps
 CMD ["pnpm", "--parallel", "--filter", "frontend", "--filter", "backend", "dev"]
