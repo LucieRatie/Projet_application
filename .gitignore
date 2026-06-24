@@ -10,7 +10,7 @@ qwen_js/.idea
 *.pyc
 *.bin
 
-*.txt
+#*.txt
 /.idea
 =======
 # dependencies
