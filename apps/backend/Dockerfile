@@ -4,8 +4,9 @@ WORKDIR /app
 RUN npm install -g pnpm
 COPY package*.json ./
 #RUN pnpm config set enable-pre-post-scripts true
-RUN pnpm install
 COPY . .
+RUN pnpm install
+
 
 EXPOSE 5000
 
