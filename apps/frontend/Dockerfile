@@ -15,7 +15,7 @@ COPY . .
 #COPY apps ./apps
 #COPY examples ./examples
 # Installation des dépendances
-RUN pnpm install --shamefully-hoist --frozen-lockfile
+RUN pnpm install 
 
 
 #COPY . .
