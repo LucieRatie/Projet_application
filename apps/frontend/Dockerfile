@@ -1,7 +1,7 @@
 FROM node:24-alpine
 
 WORKDIR /app
-
+RUN npm install -g pnpm
 # Copie des fichiers de dépendances
 COPY package*.json ./
 
