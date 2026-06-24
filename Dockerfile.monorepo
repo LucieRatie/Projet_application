@@ -12,7 +12,7 @@ COPY packages ./packages
 # Copier les projets concernés
 COPY apps/backend ./apps/backend
 COPY apps/frontend ./apps/frontend
-
+COPY . .
 # 2. Installer toutes les dépendances du workspace
 RUN pnpm install --frozen-lockfile
 
