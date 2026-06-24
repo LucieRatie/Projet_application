@@ -11,10 +11,12 @@ COPY pnpm-lock.yaml turbo.json ./
 COPY packages ./packages
 COPY apps ./apps
 # Installation des dépendances
-RUN pnpm install --shamefully-hoist --frozen-lockfile
+#RUN pnpm install --shamefully-hoist --frozen-lockfile
 
 
 #COPY . .
+RUN pnpm -r build
+RUN pnpm --filter @assistant-ui/next build
 RUN pnpm --filter frontend exec next build
 
 # Copie du reste du code
