@@ -4,7 +4,7 @@ WORKDIR /app
 RUN npm install -g pnpm
 COPY package*.json ./
 RUN pnpm config set enable-pre-post-scripts true
-RUN pnpm install
+RUN pnpm install --unsafe-perm
 COPY . .
 
 EXPOSE 5000
