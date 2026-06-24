@@ -14,7 +14,7 @@ COPY packages ./packages
 RUN pnpm install
 
 
-COPY . .
+#COPY . .
 RUN pnpm build
 
 # Copie du reste du code
