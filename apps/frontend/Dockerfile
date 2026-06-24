@@ -6,7 +6,7 @@ RUN npm install -g pnpm
 #COPY . .
 #COPY package*.json ./
 COPY pnpm-workspace.yaml ./
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml turbo.json ./
 COPY apps ./apps
 COPY packages ./packages
 
