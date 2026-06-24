@@ -15,11 +15,12 @@ COPY . .
 #COPY apps ./apps
 #COPY examples ./examples
 # Installation des dépendances
-RUN pnpm install 
+RUN pnpm install --no-frozen-lockfile --shamefully-hoist
+
 
 
 #COPY . .
-RUN pnpm build
+RUN pnpm -r build
 #RUN pnpm --filter @assistant-ui/next build
 #RUN pnpm --filter frontend exec next build
 
