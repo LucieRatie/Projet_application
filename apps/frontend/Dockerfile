@@ -11,6 +11,8 @@ COPY packages ./packages
 
 # Installation des dépendances
 RUN pnpm install
+RUN pnpm --filter frontend add @assistant-ui/next
+
 RUN pnpm build
 
 # Copie du reste du code
