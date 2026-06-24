@@ -14,10 +14,10 @@ COPY packages ./packages
 RUN pnpm install
 
 
+COPY . .
 RUN pnpm build
 
 # Copie du reste du code
-COPY . .
 
 EXPOSE 3000
 
