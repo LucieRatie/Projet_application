@@ -1,0 +1,57 @@
+services:
+  # Base de données MongoDB
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_service
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  # Service Ollama (IA)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama_service
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Note : Si tu as une carte graphique Nvidia et que tu veux l'utiliser, 
+    # il faudra ajouter la configuration des GPU ici.
+
+  # Service Python / Langchain
+  python-service:
+    build:
+      context: ./Langchain_python
+    container_name: langchain_service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - ollama
+      - mongodb
+
+  # Backend Node.js
+  backend:
+    build:
+      context: ./apps/backend
+    container_name: backend_service
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/ton_nom_de_bdd
+    depends_on:
+      - mongodb
+
+  # Frontend Node.js
+  frontend:
+    build:
+      context: ./apps/frontend
+    container_name: frontend_service
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+  ollama_data:
