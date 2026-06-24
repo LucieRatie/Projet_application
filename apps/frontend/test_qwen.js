@@ -1,5 +1,5 @@
 // test.js
-import { init_chat, invoke, get_discussion } from "../../qwen_js/main.js";
+import { init_chat, invoke, get_discussion } from "../../qwen_js/main.mjs";
 import { config } from "../../qwen_js/config.mjs";
 
 async function runTest() {

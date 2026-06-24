@@ -9,19 +9,22 @@ COPY package*.json ./
 COPY pnpm-workspace.yaml ./
 COPY pnpm-lock.yaml turbo.json ./
 COPY packages ./packages
-COPY apps ./apps
-COPY examples ./examples
+COPY app ./app
+COPY . .
+
+#COPY apps ./apps
+#COPY examples ./examples
 # Installation des dépendances
 #RUN pnpm install --shamefully-hoist --frozen-lockfile
 
 
 #COPY . .
-RUN pnpm -r build
-RUN pnpm --filter @assistant-ui/next build
-RUN pnpm --filter frontend exec next build
+RUN pnpm build
+#RUN pnpm --filter @assistant-ui/next build
+#RUN pnpm --filter frontend exec next build
 
 # Copie du reste du code
 
 EXPOSE 3000
 
-CMD ["pnpm","--filter","frontend", "start", "--port","3000"]
+CMD ["pnpm", "start", "--port","3000"]
