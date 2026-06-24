@@ -11,7 +11,7 @@ COPY pnpm-lock.yaml turbo.json ./
 COPY packages ./packages
 
 # Installation des dépendances
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 RUN pnpm --filter frontend add @assistant-ui/next
 
 RUN pnpm --filter frontend build
