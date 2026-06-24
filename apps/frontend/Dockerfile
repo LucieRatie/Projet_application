@@ -1,5 +1,5 @@
 FROM node:24-alpine
-
+ENV CI=true
 WORKDIR /app
 RUN npm install -g pnpm
 RUN corepack enable
