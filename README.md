@@ -123,3 +123,9 @@ Pour un environnement de production, il est recommandé d'utiliser des gestionna
    * Démarrez le serveur en écoute publique : `pnpm start --host 0.0.0.0` (port 3000).
 
 Pour un accès externe propre (nom de domaine, HTTPS), nous recommandons de configurer un reverse proxy avec **Nginx** pointant vers le port 3000 de votre frontend.
+
+
+Debian / Linux
+git clone
+cd Projet_application/
+docker-compose up
