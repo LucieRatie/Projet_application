@@ -10,6 +10,7 @@ COPY pnpm-workspace.yaml ./
 COPY pnpm-lock.yaml turbo.json ./
 COPY packages ./packages
 COPY apps ./apps
+COPY examples ./examples
 # Installation des dépendances
 #RUN pnpm install --shamefully-hoist --frozen-lockfile
 
