@@ -1,29 +1,32 @@
-FROM node:24-slim
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+FROM node:24-alpine
+
+# Installe pnpm globalement
+RUN npm install -g pnpm
 
 WORKDIR /app
 
-# 1. Copier l'intégralité du projet (nécessaire pour garder la structure /apps)
+# 1. Copier les fichiers de configuration globaux du monorepo
+COPY package*.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
+
+# 2. Copier TOUS les package.json de toutes les applications pour que pnpm prépare le workspace
+COPY apps/frontend/package*.json ./apps/frontend/
+# (Fais de même si tu as d'autres packages/apps partagés dont le frontend dépend)
+# COPY packages/shared/package*.json ./packages/shared/
+
+# 3. Installer les dépendances depuis la RACINE (très important pour pnpm)
+RUN pnpm install --frozen-lockfile
+
+# 4. Copier le reste du code source de tout le projet
 COPY . .
-WORKDIR /app/apps
-#RUN pnpm --parallel --filter frontend --filter backend dev
 
-# 2. Installer les dépendances dans /apps/backend
-WORKDIR /app/apps/backend
-RUN pnpm install
-
-# 3. Installer les dépendances et build dans /apps/frontend
+# 5. Se déplacer dans le dossier frontend pour build
 WORKDIR /app/apps/frontend
-RUN pnpm install
+
+# Optionnel mais recommandé avec pnpm pour Next.js s'il y a des soucis de dépendances fantômes
+# RUN pnpm install
+
 RUN pnpm build
 
-# 4. Se placer dans /apps pour exécuter la commande de démarrage
-WORKDIR /app/apps
+EXPOSE 5000 3000
 
-# Exposer les ports nécessaires
-EXPOSE 3000 5000
-
-# 5. Lancer le mode dev en parallèle depuis /apps
-CMD ["pnpm", "--parallel", "--filter", "frontend", "--filter", "backend", "dev"]
+CMD ["pnpm", "start"]
