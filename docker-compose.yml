@@ -45,7 +45,9 @@ services:
   # Frontend Node.js
   frontend:
     build:
-      context: ./apps/frontend/
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    working_dir: /app
     container_name: frontend_service
     ports:
       - "3000:3000"

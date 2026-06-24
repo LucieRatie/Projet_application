@@ -9,16 +9,16 @@ COPY package*.json ./
 COPY pnpm-workspace.yaml ./
 COPY pnpm-lock.yaml turbo.json ./
 COPY packages ./packages
-
+COPY apps ./apps
 # Installation des dépendances
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 
 #COPY . .
-RUN pnpm build
+RUN pnpm --filter frontend build
 
 # Copie du reste du code
 
 EXPOSE 3000
 
-CMD ["pnpm", "start", "--port","3000"]
+CMD ["pnpm","--filter","frontend", "start", "--port","3000"]
