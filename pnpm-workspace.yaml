@@ -9,7 +9,7 @@ preferWorkspacePackages: true
 publicHoistPattern:
   - '@types/*'
 
-strictDepBuilds: true
+strictDepBuilds: false
 
 verifyDepsBeforeRun: install
 
