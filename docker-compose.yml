@@ -33,8 +33,7 @@ services:
   # Backend Node.js
   backend:
     build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
+      context: ./apps/backend/
     container_name: backend_service
     ports:
       - "5000:5000"
@@ -46,8 +45,7 @@ services:
   # Frontend Node.js
   frontend:
     build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile
+      context: ./apps/frontend/
     container_name: frontend_service
     ports:
       - "3000:3000"

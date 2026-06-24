@@ -3,12 +3,12 @@ FROM node:24-alpine
 WORKDIR /app
 RUN npm install -g pnpm
 # Copie des fichiers de dépendances
-#COPY . .
+COPY . .
 #COPY package*.json ./
-COPY pnpm-workspace.yaml ./
-COPY package.json pnpm-lock.yaml turbo.json ./
-COPY apps ./apps
-COPY packages ./packages
+COPY pnpm-workspace.yaml ../../
+COPY package.json pnpm-lock.yaml turbo.json ../../
+COPY apps ../../apps
+COPY packages ../../packages
 
 # Installation des dépendances
 RUN pnpm install
