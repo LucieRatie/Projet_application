@@ -39,4 +39,5 @@ RUN pnpm install
 #RUN pnpm build
 EXPOSE 3000
 # Utilisation de la commande exacte que tu as spécifiée
+CMD ["cd", "apps/frontend/"]
 CMD ["pnpm", "start", "--port", "3000"]
