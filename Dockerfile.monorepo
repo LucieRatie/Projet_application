@@ -1,30 +1,30 @@
 FROM node:24-alpine
 
-# Installe pnpm globalement
 RUN npm install -g pnpm
 
 WORKDIR /app
 
-# 1. Copier les fichiers de configuration globaux du monorepo
+# 1. Copier TOUS les fichiers de configuration nécessaires au workspace
 COPY package*.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-
-# 2. Copier TOUS les package.json de toutes les applications pour que pnpm prépare le workspace
 COPY apps/frontend/package*.json ./apps/frontend/
-# (Fais de même si tu as d'autres packages/apps partagés dont le frontend dépend)
-# COPY packages/shared/package*.json ./packages/shared/
 
-# 3. Installer les dépendances depuis la RACINE (très important pour pnpm)
+# 2. CRUCIAL : Copier aussi le package.json de ton package local !
+COPY packages/next/package*.json ./packages/next/
+# (Si tu as d'autres dossiers dans packages/, copie leurs package.json ici)
+
+# 3. Installer toutes les dépendances du monorepo
 RUN pnpm install --frozen-lockfile
 
-# 4. Copier le reste du code source de tout le projet
+# 4. Copier l'intégralité du code source (pour avoir le code de packages/next)
 COPY . .
 
-# 5. Se déplacer dans le dossier frontend pour build
+# 5. ÉTAPE MANQUANTE : Builder d'abord les packages partagés du monorepo
+# Cette commande va compiler packages/next et créer le fameux dossier 'dist/'
+RUN pnpm --filter "./packages/**" build 
+# (OU si tu utilises Turborepo : RUN pnpm turbo run build --filter=... )
+
+# 6. Maintenant, on peut builder le frontend en toute sécurité
 WORKDIR /app/apps/frontend
-
-# Optionnel mais recommandé avec pnpm pour Next.js s'il y a des soucis de dépendances fantômes
-# RUN pnpm install
-
 RUN pnpm build
 
 EXPOSE 5000 3000
