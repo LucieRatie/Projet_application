@@ -35,7 +35,6 @@ services:
       - MONGO_URI=mongodb://mongodb:27017/mon_app
       - ONLINE_MODE=false
       - OLLAMA_HOST=http://ollama:11434
-      - OLLAMA_MODEL=qwen2.5:0.5b
       - RAG_SERVICE_URL=http://python-service:8000
     depends_on:
       - mongodb
@@ -74,7 +73,7 @@ services:
 
   # --- MONGO DB ---
   mongodb:
-    image: mongo:latest
+    image: mongo:4:4
     container_name: app-mongodb
     restart: always
     ports:
