@@ -14,7 +14,7 @@ FROM base AS root-builder
 
 # Copie du reste du code pour exécuter le build racine
 COPY . .
-RUN pnpm build --filter=!@assistant-ui/docs --filter=!with-ai-sdk-v6
+RUN pnpm build --filter=frontend #--filter=!@assistant-ui/docs --filter=!with-ai-sdk-v6
 
 # --- ÉTAPE 3 : Image finale pour le BACKEND ---
 FROM base AS backend
