@@ -30,7 +30,7 @@ services:
     restart: always
     ports:
       - "5000:5000"
-    command: pnpm --filter frontend start # Ou la commande spécifique à ton backend ex: pnpm --filter backend start
+  # Ou la commande spécifique à ton backend ex: pnpm --filter backend start
     environment:
       - NODE_ENV=production
       - MONGO_URI=mongodb://mongodb:27017/mon_app
