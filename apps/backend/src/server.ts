@@ -190,7 +190,12 @@ app.post("/api/chat", async (req, res) => {
       }
 
       if (ragQuery && aiDocuments.length > 0) {
-        let ragUrl = `http://localhost:8000/search?q=${encodeURIComponent(ragQuery)}`;
+        // On récupère l'URL depuis Docker, sinon on garde localhost en secours pour le dev local
+        const ragBaseUrl =
+          process.env.RAG_SERVICE_URL || "http://localhost:8000";
+
+        // On génère l'URL finale
+        let ragUrl = `${ragBaseUrl}/search?q=${encodeURIComponent(ragQuery)}`;
         if (sources) {
           ragUrl += `&sources=${encodeURIComponent(sources)}`;
         }
