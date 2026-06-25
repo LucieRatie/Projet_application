@@ -37,7 +37,7 @@ services:
       - ONLINE_MODE=false
       - OLLAMA_HOST=http://ollama:11434
       - RAG_SERVICE_URL=http://python-service:8000
-    working_dir: ./app/backend
+    working_dir: /app/backend
     command: npm run start
     depends_on:
       - mongodb
