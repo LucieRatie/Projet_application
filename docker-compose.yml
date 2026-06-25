@@ -73,7 +73,7 @@ services:
 
   # --- MONGO DB ---
   mongodb:
-    image: mongo:4:4
+    image: mongo:4.4
     container_name: app-mongodb
     restart: always
     ports:
