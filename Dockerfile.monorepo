@@ -14,7 +14,7 @@ FROM base AS root-builder
 
 # Copie du reste du code pour exécuter le build racine
 COPY . .
-RUN pnpm build
+RUN pnpm build --filter=!@assistant-ui/docs
 
 # --- ÉTAPE 3 : Image finale pour le BACKEND ---
 FROM base AS backend
