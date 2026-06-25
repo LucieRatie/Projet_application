@@ -14,7 +14,7 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://backend:5000
+      #- NEXT_PUBLIC_API_URL=http://backend:5000
     command: pnpm --filter frontend start --port 3000
     depends_on:
       - backend
