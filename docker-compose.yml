@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.monorepo
+      target: frontend
     image: projet_application-frontend
     container_name: app-frontend
     restart: always
@@ -22,6 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.monorepo
+      target: backend
     image: projet_application-backend
     container_name: app-backend
     restart: always
