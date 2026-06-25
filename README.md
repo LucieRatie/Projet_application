@@ -1,125 +1,109 @@
-# Guide du Projet - Application Assistant Pédagogique (DRAM)
+# 🚀 Installation de l'application
 
-Ce projet est organisé en deux parties distinctes : le **Frontend** (interface utilisateur) et le **Backend** (serveur, base de données et IA).
+![Node.js](https://img.shields.io/badge/Node.js-Dockerized-green)
+![Docker](https://img.shields.io/badge/Docker-Required-blue)
 
----
+## 📋 Prérequis
 
-## 🏗️ Architecture du projet
+Avant de commencer, assurez-vous de disposer de :
 
-Tout le code de l'application est contenu dans le dossier `apps/` :
-
-### 1. Le Frontend (`apps/frontend/`)
-- **Technologies** : Next.js, React, TailwindCSS, assistant-ui.
-- **Rôle** : Interface web utilisée par les élèves (pour discuter avec l'IA, voir les documents, générer des glossaires) et par les professeurs (pour le suivi et la gestion des cours).
-- **Où chercher ?**
-  - L'interface élève se trouve dans `apps/frontend/app/student-chat.tsx`.
-  - Le tableau de bord du professeur se trouve dans `apps/frontend/app/dashboard/page.tsx`.
-
-### 2. Le Backend (`apps/backend/`)
-- **Technologies** : Node.js, Express.js, Mongoose (MongoDB), Vercel AI SDK.
-- **Rôle** : API pour communiquer avec la base de données (élèves, historiques, sessions) et traiter les prompts d'IA (via Google Gemini ou Ollama). Gère également le parsing des PDF et la création de fichiers.
-- **Où chercher ?**
-  - Les routes API (Chat, Synchro, Evaluate, Glossary, Upload) sont dans `apps/backend/src/server.ts`.
-  - Les modèles de données sont dans `apps/backend/src/models/`.
+* ✅ Docker installé et fonctionnel
+* ✅ Docker Compose installé
+* ✅ Une connexion Internet pour télécharger les images
+* ✅ **75 Go d'espace disque disponible**
+* ⏱️ **Temps d'installation estimé : 20 minutes**
 
 ---
 
-## ⚙️ Configuration (Variables d'environnement)
+## 📦 Installation
 
-Pour utiliser les nouvelles fonctionnalités d'IA (comme la génération de glossaires basés sur des PDF), l'application utilise **Google Gemini 2.5 Flash**.
+### 1. Cloner le dépôt
 
-1. Naviguez dans le dossier Backend : `apps/backend/`
-2. Créez ou modifiez le fichier `.env` avec les variables suivantes :
-```env
-# Clé API Google (Recommandé pour la stabilité et les nouvelles fonctionnalités RAG/Glossaire)
-GOOGLE_GENERATIVE_AI_API_KEY=VOTRE_CLE_API_ICI
-
-# Mode Online (true = utilise Google Gemini, false = utilise Ollama en local)
-ONLINE_MODE=true
-
-# (Optionnel si vous utilisez Ollama)
-OLLAMA_URL=http://127.0.0.1:11434
-OLLAMA_MODEL=qwen3.5:9b
-```
-
----
-
-## 🚀 Comment lancer le projet complet ?
-
-Pour faire fonctionner le site web, vous devez lancer **le frontend et le backend en même temps**.
-
-**1. Pré-requis :**
-- Assurez-vous d'avoir une base de données **MongoDB locale** en cours d'exécution (sur le port 27017).
-
-**2. Lancement :**
-Ouvrez un terminal à la racine du projet et exécutez la commande suivante :
 ```bash
-pnpm --parallel --filter frontend --filter backend dev
+git clone https://github.com/LucieRatie/Projet_application.git
+cd Projet_application
 ```
 
-> **Que fait cette commande ?** 
-> Elle démarre simultanément :
-> 1. Le **Backend (Express)** sur le port `5000` (http://localhost:5000). Les fichiers uploadés sont servis publiquement.
-> 2. Le **Frontend (Next.js)** sur le port `3000` (http://localhost:3000).
+### 2. Construire les conteneurs Docker
 
-**3. Accéder au site :**
-Une fois les deux serveurs lancés, ouvrez votre navigateur à l'adresse :
-👉 **[http://localhost:3000](http://localhost:3000)**
-
----
-
-## 🌟 Nouvelles Fonctionnalités
-
-### 👨‍🏫 Espace Professeur (Dashboard)
-- **Gestion des Sessions** : Vous pouvez créer des "Sessions" (ex: Cours de Géographie, Exercices de Mathématiques).
-- **Assignation des Élèves** : Vous pouvez attribuer des élèves spécifiques à une session.
-- **Base de connaissances IA** : Téléversez des documents (PDF, TXT) que l'IA lira pour pouvoir interagir intelligemment avec l'élève.
-- **Documents de cours** : Téléversez des documents que l'élève pourra télécharger ou consulter directement.
-
-### 🎓 Espace Élève
-- **Chat Pédagogique** : Discute avec l'assistant IA. L'IA adapte ses réponses au profil de l'élève (langue maternelle, niveau de français, cycle).
-- **📚 Docs (Documents de cours)** : L'élève peut consulter et télécharger les PDF/exercices que le professeur a assignés à la session.
-- **✨ Vocabulaire Bilingue (Nouveau)** : 
-  - L'élève peut cliquer sur le bouton **"Créer mon glossaire"**.
-  - L'IA va scanner tous les PDF de cours, en extraire 10 à 15 mots difficiles.
-  - Elle génère un glossaire traduisant ces mots dans la **langue maternelle** de l'élève avec des explications simples en français.
-  - Le glossaire s'affiche directement à l'écran **ET** est automatiquement sauvegardé sous forme de fichier `.txt` dans l'onglet **Docs** pour être téléchargé !
-
----
-
-## 🤖 Données de test (Générer des élèves)
-
-Si votre base de données est vide lors du premier lancement, vous pouvez la remplir automatiquement avec des données de démonstration. Pour cela, visitez cette URL de l'API (une fois le backend en cours d'exécution) :
-👉 **[http://localhost:5000/api/seed](http://localhost:5000/api/seed)**
-
----
-
-## 🖥️ Déploiement sur un serveur (Debian/Linux)
-
-Si vous souhaitez déployer cette application sur un serveur Debian (ou Ubuntu) équipé pour faire tourner un modèle IA en local, voici la marche à suivre :
-
-### 1. Pré-requis sur le serveur
-* **Node.js (v18+) & pnpm** : Requis pour faire tourner le Frontend (Next.js) et le Backend (Express).
-* **Python 3 & pip** : Requis pour le serveur RAG (`langchain_python`).
-* **MongoDB** : Ciblez une instance locale ou un conteneur Docker.
-* **Ollama** : Pour faire tourner les modèles locaux. (Installation rapide : `curl -fsSL https://ollama.com/install.sh | sh`).
-
-### 2. Téléchargement du modèle IA
-Une fois Ollama installé, téléchargez le modèle que vous souhaitez utiliser (par exemple, Qwen) :
 ```bash
-ollama pull qwen2.5:0.5b
+docker compose build
 ```
 
-### 3. Lancement en production
-Pour un environnement de production, il est recommandé d'utiliser des gestionnaires de processus (comme `pm2` ou `tmux`) :
+Cette étape peut prendre plusieurs minutes selon votre machine et votre connexion Internet.
 
-1. **Serveur RAG (Python)** : Installez les dépendances (`pip install -r requirements.txt`) et lancez l'API FastAPI (généralement sur le port 8000).
-2. **Backend (Node.js)** :
-   * Modifiez le fichier `apps/backend/.env` pour définir `ONLINE_MODE=false` et `OLLAMA_MODEL=qwen2.5:0.5b`.
-   * Démarrez avec `pnpm install` puis lancez le serveur via PM2 ou `npm run start` (port 5000).
-3. **Frontend (Next.js)** :
-   * Allez dans `apps/frontend/`.
-   * Lancez le build : `pnpm install` puis `pnpm build`.
-   * Démarrez le serveur en écoute publique : `pnpm start --host 0.0.0.0` (port 3000).
+### 3. Démarrer l'application
 
-Pour un accès externe propre (nom de domaine, HTTPS), nous recommandons de configurer un reverse proxy avec **Nginx** pointant vers le port 3000 de votre frontend.
+```bash
+docker compose up -d
+```
+
+Vérifiez que les conteneurs sont correctement démarrés :
+
+```bash
+docker ps
+```
+
+### 4. Télécharger et lancer le modèle IA
+
+```bash
+docker exec -it app-ollama ollama run gemma4:e2b
+```
+
+Lors du premier lancement, le modèle sera téléchargé automatiquement. Cette opération peut prendre plusieurs minutes.
+
+---
+
+## 🌐 Accès à l'application
+
+Une fois l'installation terminée, l'interface web est accessible à l'adresse :
+
+```text
+http://localhost:3000
+```
+
+---
+
+## 🔍 Vérification rapide
+
+Vous devriez avoir :
+
+* ✅ Les conteneurs Docker en cours d'exécution
+* ✅ Le modèle `gemma4:e2b` téléchargé
+* ✅ L'interface web accessible sur le port **3000**
+
+---
+
+## 🛠️ Dépannage
+
+### Les conteneurs ne démarrent pas
+
+Consultez les journaux :
+
+```bash
+docker compose logs -f
+```
+
+### Vérifier l'état des conteneurs
+
+```bash
+docker ps
+```
+
+### Arrêter l'application
+
+```bash
+docker compose down
+```
+
+---
+
+## 📊 Résumé
+
+| Élément              | Valeur                    |
+| -------------------- | ------------------------- |
+| Temps d'installation | ~20 min                   |
+| Espace disque requis | 75 Go                     |
+| Port Frontend        | 3000                      |
+| Technologie          | Node.js + Docker + Ollama |
+| Modèle IA            | gemma4:e2b                |
