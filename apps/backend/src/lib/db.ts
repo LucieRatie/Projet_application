@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/dram_project";
+  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/dram_db";
 
 if (!MONGODB_URI) {
   throw new Error(
