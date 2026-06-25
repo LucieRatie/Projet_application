@@ -36,7 +36,7 @@ COPY --from=root-builder /app /app
 WORKDIR /app/frontend
 # Exécution de tes commandes exactes pour le frontend
 RUN pnpm install
-RUN pnpm build
+#RUN pnpm build
 EXPOSE 3000
 # Utilisation de la commande exacte que tu as spécifiée
 CMD ["pnpm", "start", "--port", "3000"]
