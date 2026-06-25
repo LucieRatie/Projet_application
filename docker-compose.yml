@@ -1,4 +1,88 @@
+version: '3.8'
+
 services:
+  # --- FRONTEND (Next.js) ---
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.monorepo
+    image: projet_application-frontend
+    container_name: app-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://backend:5000
+    depends_on:
+      - backend
+
+  # --- BACKEND (Node.js / Express) ---
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.monorepo
+    image: projet_application-backend
+    container_name: app-backend
+    restart: always
+    ports:
+      - "5000:5000"
+    command: pnpm --filter frontend start # Ou la commande spécifique à ton backend ex: pnpm --filter backend start
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongodb:27017/mon_app
+      - ONLINE_MODE=false
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:0.5b
+      - RAG_SERVICE_URL=http://python-service:8000
+    depends_on:
+      - mongodb
+      - ollama
+
+  # --- RAG SERVICE (Python / FastAPI) ---
+  python-service:
+    build:
+      context: ./python # Ajuste le chemin vers ton dossier contenant le script Python et le Dockerfile Python
+    container_name: app-python-service
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ollama
+
+  # --- OLLAMA (Modèles IA Locaux) ---
+  ollama:
+    image: ollama/ollama:latest
+    container_name: app-ollama
+    restart: always
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # Si ton serveur Debian possède un GPU Nvidia, décommente les lignes ci-dessous :
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # --- MONGO DB ---
+  mongodb:
+    image: mongo:latest
+    container_name: app-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+volumes:
+  mongodb_data:
+  ollama_data:services:
   # Base de données MongoDB
   mongodb:
     image: mongo:latest
