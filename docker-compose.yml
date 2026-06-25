@@ -42,7 +42,7 @@ services:
   # --- RAG SERVICE (Python / FastAPI) ---
   python-service:
     build:
-      context: ./python # Ajuste le chemin vers ton dossier contenant le script Python et le Dockerfile Python
+      context: ./Langchain_python # Ajuste le chemin vers ton dossier contenant le script Python et le Dockerfile Python
     container_name: app-python-service
     restart: always
     ports:
@@ -82,51 +82,4 @@ services:
 
 volumes:
   mongodb_data:
-  ollama_data:services:
-  # Base de données MongoDB
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb_service
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
-  # Service Ollama (IA)
-  ollama:
-    image: ollama/ollama:latest
-    container_name: ollama_service
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    # Note : Si tu as une carte graphique Nvidia et que tu veux l'utiliser, 
-    # il faudra ajouter la configuration des GPU ici.
-
-  # Service Python / Langchain
-  python-service:
-    build:
-      context: ./Langchain_python
-    container_name: langchain_service
-    ports:
-      - "8000:8000"
-    depends_on:
-      - ollama
-      - mongodb
-
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.monorepo
-    container_name: web_app_service
-    ports:
-      - "3000:3000" # Port Frontend
-      - "5000:5000" # Port Backend
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/ton_nom_de_bdd
-    depends_on:
-      - mongodb
-
-volumes:
-  mongo_data:
   ollama_data:
