@@ -1,5 +1,28 @@
 FROM node:24-alpine
 
+RUN npm install -g pnpm turbo
+
+WORKDIR /workspace
+
+# Copie des configurations du monorepo
+COPY package*.json pnpm-lock.yaml* pnpm-workspace.yaml* turbo.json ./
+COPY apps/frontend/package*.json ./apps/frontend/
+COPY packages/next/package*.json ./packages/next/
+# Ajoute ici les package.json des autres sous-dossiers si nécessaire (ex: apps/backend)
+
+RUN pnpm install --frozen-lockfile
+
+# Copie du reste du code source
+COPY . .
+
+# Build de toutes les dépendances locales et des applications via Turbo
+RUN pnpm turbo run build
+
+# On s'expose par défaut (sera surchargé par le docker-compose)
+EXPOSE 3000 5000
+
+CMD ["pnpm", "start"]FROM node:24-alpine
+
 RUN npm install -g pnpm
 
 WORKDIR /app
