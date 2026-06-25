@@ -33,7 +33,7 @@ services:
   # Ou la commande spécifique à ton backend ex: pnpm --filter backend start
     environment:
       - NODE_ENV=production
-      - MONGO_URI=mongodb://mongodb:27017/dram_db
+      - MONGODB_URI=mongodb://mongodb:27017/dram_db
       - ONLINE_MODE=false
       - OLLAMA_HOST=http://ollama:11434
       - RAG_SERVICE_URL=http://python-service:8000
