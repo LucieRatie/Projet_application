@@ -21,7 +21,7 @@ FROM base AS backend
 # Récupère le build racine si le backend en dépend
 COPY --from=root-builder /app /app
 
-WORKDIR /app/backend
+WORKDIR /app/apps/backend
 # Exécution de tes commandes exactes pour le backend
 RUN pnpm install
 EXPOSE 5000
@@ -33,7 +33,7 @@ FROM base AS frontend
 # Récupère le build racine
 COPY --from=root-builder /app /app
 
-WORKDIR /app/frontend
+WORKDIR /app/apps/frontend
 # Exécution de tes commandes exactes pour le frontend
 RUN pnpm install
 #RUN pnpm build
