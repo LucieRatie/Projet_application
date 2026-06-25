@@ -9,8 +9,8 @@ WORKDIR /app
 # --- ÉTAPE 2 : Build de la racine ---
 FROM base AS root-builder
 # Copie des fichiers de la racine nécessaires au build global
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+#COPY package.json pnpm-lock.yaml* ./
+#RUN pnpm install --frozen-lockfile
 
 # Copie du reste du code pour exécuter le build racine
 COPY . .
